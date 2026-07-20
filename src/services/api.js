@@ -1,7 +1,7 @@
 import { animeCatalog } from "../data/animeData";
 
-const JIKAN_BASE = "https://api.jikan.moe/v4";
-const CONSUMET_BASE = "https://api.consumet.org/anime/gogoanime";
+const JIKAN_BASE = import.meta.env.VITE_JIKAN_BASE || "https://api.jikan.moe/v4";
+const CONSUMET_BASE = import.meta.env.VITE_CONSUMET_BASE || "https://api.consumet.org/anime/gogoanime";
 
 // Hardcoded Jikan Genre Name to ID mappings
 const GENRE_MAPPINGS = {
