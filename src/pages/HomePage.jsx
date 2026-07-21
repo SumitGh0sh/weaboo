@@ -299,8 +299,13 @@ export const HomePage = () => {
                         <img src={item.poster} alt={lang === "en" ? item.titleEn : item.titleJp} />
                         <div className="meta">
                           <div className="inner">
-                            <div className="left" style={{ background: "var(--accent)", color: "hsl(220 25% 5%)", fontWeight: "bold" }}>
-                              <span>Ep {item.epNum}</span>
+                            <div className="left">
+                              <span className="ep-status sub" title={`Episode ${item.epNum}`}>
+                                <span>Ep {item.epNum}</span>
+                              </span>
+                            </div>
+                            <div className="right">
+                              {animeCatalog.find((a) => a.id === item.id)?.type || "TV"}
                             </div>
                           </div>
                         </div>

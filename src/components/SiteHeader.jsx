@@ -36,15 +36,21 @@ export const SiteHeader = () => {
     }
   }, [searchOpen]);
 
-  // Close search suggestions on click outside
+  // Close search box and suggestions on click/touch outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (autocompleteRef.current && !autocompleteRef.current.contains(e.target)) {
         setSuggestions([]);
+        setSearchOpen(false);
+        setSearchFocused(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   // Update search suggestions in real-time
@@ -246,15 +252,19 @@ export const SiteHeader = () => {
           <button
             type="button"
             className="search-toggle"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               const nextState = !searchOpen;
               setSearchOpen(nextState);
               if (nextState) {
                 setSearchFocused(true);
                 setTimeout(() => inputRef.current?.focus(), 100);
+              } else {
+                setSearchFocused(false);
+                setSuggestions([]);
               }
             }}
-            aria-label="Open search"
+            aria-label="Toggle search"
           >
             <i className="fa-solid fa-magnifying-glass"></i>
           </button>
