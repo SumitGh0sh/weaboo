@@ -786,6 +786,13 @@ nav.topbar {
     padding: 28px 20px 24px;
 }
 
+.dev-social-box:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
 .site-footer__inner {
     max-width: 1320px;
     margin: 0 auto;
@@ -6961,6 +6968,10 @@ form.filters .submit .btn-primary i {
         display: none !important;
         visibility: hidden;
         pointer-events: none;
+    }
+
+    body.search-open .site-header .brand {
+        display: none !important;
     }
 
     .site-header .brand-logo {

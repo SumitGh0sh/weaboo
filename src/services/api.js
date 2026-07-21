@@ -1,7 +1,12 @@
 import { animeCatalog } from "../data/animeData";
 
 const JIKAN_BASE = import.meta.env.VITE_JIKAN_BASE || "https://api.jikan.moe/v4";
-const CONSUMET_BASE = import.meta.env.VITE_CONSUMET_BASE || "https://api.consumet.org/anime/gogoanime";
+const CONSUMET_INSTANCES = [
+  import.meta.env.VITE_CONSUMET_BASE,
+  "https://api.consumet.org/anime/gogoanime",
+  "https://consumet-api-clone.vercel.app/anime/gogoanime",
+  "https://cws-api.kaguya.app/anime/gogoanime"
+].filter(Boolean);
 
 // Hardcoded Jikan Genre Name to ID mappings
 const GENRE_MAPPINGS = {
@@ -180,63 +185,82 @@ export const fetchWeeklySchedule = async (dayName) => {
   }
 };
 
-// 6. Fetch Video Stream Links (using Consumet)
-// Searches Consumet for matched show, then queries sources for requested episode
-export const fetchStreamingSources = async (animeTitle, episodeNum) => {
+// Helper slug generator for Gogoanime fallback embeds
+const toGogoSlug = (title, isDub = false) => {
+  let slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+  if (isDub && !slug.endsWith("-dub")) {
+    slug += "-dub";
+  }
+  return slug;
+};
+
+// 6. Fetch Video Stream Links (using Consumet Multi-Instance Failover + Gogo Embed Fallback)
+export const fetchStreamingSources = async (animeTitle, episodeNum, serverId = "server1-sub") => {
   const defaultVideo = {
     videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     isEmbed: false
   };
 
-  try {
-    // Step 1: Search Gogoanime for title
-    const searchRes = await fetch(`${CONSUMET_BASE}/${encodeURIComponent(animeTitle)}`);
-    if (!searchRes.ok) throw new Error("Search failed");
-    const searchData = await searchRes.json();
-    
-    if (!searchData.results || searchData.results.length === 0) {
-      throw new Error("No search results on Consumet");
-    }
+  const isDub = serverId.includes("dub");
+  const isEmbedServer = serverId.includes("server2") || serverId.includes("server3");
+  const slug = toGogoSlug(animeTitle, isDub);
 
-    const animeId = searchData.results[0].id; // Pick first result match
-
-    // Step 2: Fetch episodes info list
-    const infoRes = await fetch(`${CONSUMET_BASE}/info/${animeId}`);
-    if (!infoRes.ok) throw new Error("Info failed");
-    const infoData = await infoRes.json();
-
-    if (!infoData.episodes || infoData.episodes.length === 0) {
-      throw new Error("No episodes found on Consumet");
-    }
-
-    // Match exact episode number
-    const episode = infoData.episodes.find((ep) => ep.number === episodeNum) || infoData.episodes[0];
-    const episodeId = episode.id;
-
-    // Step 3: Fetch watch streams
-    const watchRes = await fetch(`${CONSUMET_BASE}/watch/${episodeId}`);
-    if (!watchRes.ok) throw new Error("Watch sources failed");
-    const watchData = await watchRes.json();
-
-    // Check for direct video streams (HLS/M3U8) or iframe embeds
-    if (watchData.sources && watchData.sources.length > 0) {
-      // Find default quality or pick first source file
-      const stream = watchData.sources.find(s => s.quality === "default" || s.quality === "720p") || watchData.sources[0];
-      return {
-        videoUrl: stream.url,
-        isEmbed: false
-      };
-    } else if (watchData.headers && watchData.headers.Referer) {
-      // Fallback to iframe embed links if available
-      return {
-        videoUrl: watchData.headers.Referer,
-        isEmbed: true
-      };
-    }
-
-    return defaultVideo;
-  } catch (error) {
-    console.warn("Consumet video stream fetch failed. Falling back to default test stream.", error);
-    return defaultVideo;
+  // If Server 2 (Embed) selected explicitly, return direct Gogoanime Embed URL
+  if (isEmbedServer) {
+    return {
+      videoUrl: `https://anitaku.to/embed/${slug}-episode-${episodeNum}`,
+      isEmbed: true
+    };
   }
+
+  // Attempt each Consumet API mirror in sequence
+  for (const baseUrl of CONSUMET_INSTANCES) {
+    try {
+      const searchTitle = isDub ? `${animeTitle} (Dub)` : animeTitle;
+      const searchRes = await fetch(`${baseUrl}/${encodeURIComponent(searchTitle)}`);
+      if (!searchRes.ok) continue;
+
+      const searchData = await searchRes.json();
+      if (!searchData.results || searchData.results.length === 0) continue;
+
+      const animeId = searchData.results[0].id;
+      const infoRes = await fetch(`${baseUrl}/info/${animeId}`);
+      if (!infoRes.ok) continue;
+
+      const infoData = await infoRes.json();
+      if (!infoData.episodes || infoData.episodes.length === 0) continue;
+
+      const episode = infoData.episodes.find((ep) => ep.number === episodeNum) || infoData.episodes[0];
+      const watchRes = await fetch(`${baseUrl}/watch/${episode.id}`);
+      if (!watchRes.ok) continue;
+
+      const watchData = await watchRes.json();
+      if (watchData.sources && watchData.sources.length > 0) {
+        const stream = watchData.sources.find(s => s.quality === "default" || s.quality === "720p") || watchData.sources[0];
+        return {
+          videoUrl: stream.url,
+          isEmbed: false
+        };
+      } else if (watchData.headers && watchData.headers.Referer) {
+        return {
+          videoUrl: watchData.headers.Referer,
+          isEmbed: true
+        };
+      }
+    } catch (err) {
+      console.warn(`Consumet instance ${baseUrl} failed:`, err);
+    }
+  }
+
+  // Fallback to direct Gogoanime embed URL if API mirrors fail
+  console.warn("All Consumet API mirrors failed. Falling back to Gogoanime direct embed player.");
+  return {
+    videoUrl: `https://anitaku.to/embed/${slug}-episode-${episodeNum}`,
+    isEmbed: true
+  };
 };
+

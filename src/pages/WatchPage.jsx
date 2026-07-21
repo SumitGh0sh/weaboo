@@ -91,7 +91,7 @@ export const WatchPage = () => {
       try {
         setVideoLoading(true);
         setIsPlaying(false);
-        const streamData = await fetchStreamingSources(anime.titleEn, epNum);
+        const streamData = await fetchStreamingSources(anime.titleEn, epNum, selectedServer);
         if (active) {
           setVideoSrc(streamData.videoUrl);
           setIsEmbed(streamData.isEmbed);
@@ -256,9 +256,12 @@ export const WatchPage = () => {
   const currentEpisode = anime.episodes ? anime.episodes.find((ep) => ep.num === epNum) : null;
 
   const servers = [
-    { id: "server1-sub", label: "Server 1 (Sub)" },
-    { id: "server2-sub", label: "Server 2 (Sub)" },
-    ...(anime.dubEps > 0 ? [{ id: "server1-dub", label: "Server 1 (Dub)" }] : [])
+    { id: "server1-sub", label: "Server 1 (Gogo Direct Sub)" },
+    { id: "server2-sub", label: "Server 2 (Gogo Embed Sub)" },
+    ...(anime.dubEps > 0 ? [
+      { id: "server1-dub", label: "Server 1 (Gogo Direct Dub)" },
+      { id: "server2-dub", label: "Server 2 (Gogo Embed Dub)" }
+    ] : [])
   ];
 
   const watchKey = `${anime.id}-${epNum}`;

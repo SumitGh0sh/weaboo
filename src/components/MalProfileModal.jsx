@@ -15,7 +15,7 @@ export const MalProfileModal = () => {
   } = useApp();
 
   const [syncStatus, setSyncStatus] = useState("");
-  const [activeTab, setActiveTab] = useState("footprint"); // "footprint", "distribution", "formats"
+  const [activeTab, setActiveTab] = useState("footprint"); // "footprint", "distribution", "scores", "formats"
   const chartContainerRef = useRef(null);
 
   useEffect(() => {
@@ -49,6 +49,12 @@ export const MalProfileModal = () => {
         { opacity: 0, y: 10 },
         { opacity: 1, y: 0, duration: 0.4, delay: 0.6, stagger: 0.06 }
       );
+    } else if (activeTab === "scores") {
+      gsap.fromTo(
+        chartContainerRef.current.querySelectorAll(".score-bar-fill"),
+        { scaleX: 0, transformOrigin: "left" },
+        { scaleX: 1, duration: 0.7, stagger: 0.04, ease: "power2.out" }
+      );
     } else if (activeTab === "formats") {
       gsap.fromTo(
         chartContainerRef.current.querySelectorAll(".doughnut-segment"),
@@ -62,7 +68,7 @@ export const MalProfileModal = () => {
       );
       gsap.fromTo(
         chartContainerRef.current.querySelector(".doughnut-center"),
-        { scale: 0.5, opacity: 0, transformOrigin: "120px 120px" },
+        { scale: 0.5, opacity: 0, transformOrigin: "75px 75px" },
         { scale: 1, opacity: 1, duration: 0.6, delay: 0.4, ease: "back.out(1.2)" }
       );
     }
@@ -106,11 +112,11 @@ export const MalProfileModal = () => {
   const center = 120;
   const maxRadius = 80;
   const radarAxes = [
-    { label: "Completed", value: malUser.completedCount, max: 200 },
-    { label: "Watching", value: malUser.watchingCount, max: 20 },
-    { label: "Plan to", value: malUser.planToWatchCount, max: 120 },
-    { label: "Days", value: malUser.daysWatched, max: 100 },
-    { label: "Rating", value: malUser.meanScore, max: 10 }
+    { label: "Completed", value: malUser.completedCount || 0, max: 200 },
+    { label: "Watching", value: malUser.watchingCount || 0, max: 20 },
+    { label: "Plan to", value: malUser.planToWatchCount || 0, max: 120 },
+    { label: "Days", value: Math.round(malUser.daysWatched || 0), max: 100 },
+    { label: "Rating", value: malUser.meanScore || 0, max: 10 }
   ];
 
   const getRadarPoints = () => {
@@ -130,17 +136,33 @@ export const MalProfileModal = () => {
   // Background Concentric Pentagons
   const gridLevels = [0.25, 0.5, 0.75, 1];
 
-  // 2. BAR CHART CONFIG
+  // 2. STATUS DISTRIBUTION BAR CHART CONFIG
   const barData = [
-    { label: "Watching", count: malUser.watchingCount, color: "var(--accent)" },
-    { label: "Completed", count: malUser.completedCount, color: "hsl(145 60% 55%)" },
-    { label: "On Hold", count: malUser.onHoldCount || 0, color: "hsl(45 90% 55%)" },
-    { label: "Dropped", count: malUser.droppedCount || 0, color: "hsl(350 85% 55%)" },
-    { label: "Plan to Watch", count: malUser.planToWatchCount, color: "hsl(200 85% 55%)" }
+    { label: "Watching", count: malUser.watchingCount || 0, color: "#38bdf8" },
+    { label: "Completed", count: malUser.completedCount || 0, color: "#22c55e" },
+    { label: "On Hold", count: malUser.onHoldCount || 0, color: "#f59e0b" },
+    { label: "Dropped", count: malUser.droppedCount || 0, color: "#ef4444" },
+    { label: "Plan to Watch", count: malUser.planToWatchCount || 0, color: "#8b5cf6" }
   ];
   const maxBarVal = Math.max(...barData.map((b) => b.count)) || 1;
 
-  // 3. DOUGHNUT CHART CONFIG
+  // 3. SCORE DISTRIBUTION GRAPH DATA
+  const scoresData = malUser.scores || [
+    { score: 10, count: 32, percentage: 22.8 },
+    { score: 9, count: 54, percentage: 38.5 },
+    { score: 8, count: 36, percentage: 25.7 },
+    { score: 7, count: 12, percentage: 8.5 },
+    { score: 6, count: 4, percentage: 2.8 },
+    { score: 5, count: 1, percentage: 0.7 },
+    { score: 4, count: 1, percentage: 0.7 },
+    { score: 3, count: 0, percentage: 0 },
+    { score: 2, count: 0, percentage: 0 },
+    { score: 1, count: 0, percentage: 0 }
+  ];
+  const maxScoreCount = Math.max(...scoresData.map((s) => s.count)) || 1;
+  const totalVotes = scoresData.reduce((acc, s) => acc + s.count, 0) || 1;
+
+  // 4. DOUGHNUT CHART CONFIG
   const getFormatCounts = () => {
     const counts = { TV: 0, Movie: 0, OVA: 0, ONA: 0, Special: 0 };
     let active = false;
@@ -165,12 +187,11 @@ export const MalProfileModal = () => {
   };
 
   const formatCounts = getFormatCounts();
-  const doughnutCircumference = 376.99; // 2 * PI * r (r=60)
   const doughnutSegments = [
-    { label: "TV", count: formatCounts.TV, color: "var(--accent)" },
-    { label: "Movie", count: formatCounts.Movie, color: "hsl(145 60% 55%)" },
-    { label: "ONA", count: formatCounts.ONA, color: "hsl(200 85% 55%)" },
-    { label: "OVA/Sp", count: formatCounts.OVA + formatCounts.Special, color: "hsl(45 90% 55%)" }
+    { label: "TV", count: formatCounts.TV, color: "#38bdf8" },
+    { label: "Movie", count: formatCounts.Movie, color: "#22c55e" },
+    { label: "ONA", count: formatCounts.ONA, color: "#8b5cf6" },
+    { label: "OVA/Sp", count: formatCounts.OVA + formatCounts.Special, color: "#f59e0b" }
   ].filter(s => s.count > 0);
 
   const totalDoughnutCount = doughnutSegments.reduce((sum, s) => sum + s.count, 0);
@@ -201,51 +222,79 @@ export const MalProfileModal = () => {
               </div>
               <div style={styles.headerInfo}>
                 <a href={malUser.url} target="_blank" rel="noopener noreferrer" style={styles.usernameLink}>
-                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "750" }}>
-                    {malUser.username} <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: "11px", marginLeft: "4px" }}></i>
+                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "750", color: "#f8fafc" }}>
+                    {malUser.username} <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: "11px", marginLeft: "4px", color: "#64748b" }}></i>
                   </h3>
                 </a>
-                <span style={styles.statusBadge}>Connected</span>
+                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                  <span style={styles.statusBadge}>
+                    <i className="fa-solid fa-circle-check" style={{ marginRight: "4px" }}></i> Connected
+                  </span>
+                  {malUser.source && (
+                    <span style={styles.sourceBadge}>{malUser.source}</span>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Mock Data Warning Alert */}
             {malUser.isMocked && (
               <div style={styles.mockWarning}>
-                <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: "6px" }}></i>
-                <span>Jikan API scraper timeout. Showing cached/fallback MAL profile stats.</span>
+                <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: "6px", color: "#f59e0b" }}></i>
+                <span>Showing cached/fallback profile stats.</span>
               </div>
             )}
 
-            {/* Numeric quick stats list */}
+            {/* Numeric quick stats list with sleek FontAwesome icons */}
             <div style={styles.sidebarStats}>
               <div style={styles.sidebarStatRow}>
-                <span>📚 Episodes Watched</span>
-                <strong>{malUser.episodesWatched}</strong>
+                <span>
+                  <i className="fa-solid fa-tv" style={{ color: "#38bdf8", width: "16px", marginRight: "8px" }}></i> Episodes Watched
+                </span>
+                <strong>{malUser.episodesWatched ? malUser.episodesWatched.toLocaleString() : 0}</strong>
               </div>
               <div style={styles.sidebarStatRow}>
-                <span>⏱️ Days Spent</span>
-                <strong>{Math.round(malUser.daysWatched)}</strong>
+                <span>
+                  <i className="fa-solid fa-clock" style={{ color: "#a855f7", width: "16px", marginRight: "8px" }}></i> Time Spent
+                </span>
+                <strong>{Math.round(malUser.daysWatched || 0)}d ({Math.round((malUser.daysWatched || 0) * 24)}h)</strong>
               </div>
               <div style={styles.sidebarStatRow}>
-                <span>⭐ Mean rating</span>
-                <strong>{malUser.meanScore || "N/A"}</strong>
+                <span>
+                  <i className="fa-solid fa-star" style={{ color: "#f59e0b", width: "16px", marginRight: "8px" }}></i> Mean Rating
+                </span>
+                <strong style={{ color: "#f59e0b" }}>{malUser.meanScore || "N/A"} ★</strong>
+              </div>
+              <div style={styles.sidebarStatRow}>
+                <span>
+                  <i className="fa-solid fa-layer-group" style={{ color: "#22c55e", width: "16px", marginRight: "8px" }}></i> Total Entries
+                </span>
+                <strong>{malUser.totalEntries || (malUser.completedCount + malUser.watchingCount + malUser.planToWatchCount) || 0}</strong>
+              </div>
+              <div style={styles.sidebarStatRow}>
+                <span>
+                  <i className="fa-solid fa-rotate-right" style={{ color: "#ec4899", width: "16px", marginRight: "8px" }}></i> Rewatched Anime
+                </span>
+                <strong>{malUser.rewatchedCount || 0}</strong>
               </div>
             </div>
 
             {/* Currently Watching Shelf */}
             <div style={{ marginTop: "24px" }}>
-              <h4 style={styles.sectionTitle}>Currently Watching ({malWatching.length})</h4>
+              <h4 style={styles.sectionTitle}>
+                <i className="fa-solid fa-circle-play" style={{ color: "#38bdf8", marginRight: "6px" }}></i>
+                Currently Watching ({malWatching.length})
+              </h4>
               {malWatching.length === 0 ? (
-                <p style={styles.emptyText}>No active watchlist entries cataloged on your MAL profile.</p>
+                <p style={styles.emptyText}>No active watchlist entries cataloged on your profile.</p>
               ) : (
                 <div style={styles.scrollShelf}>
-                  {malWatching.slice(0, 6).map((item) => {
+                  {malWatching.map((item, idx) => {
                     const animeTitle = item.anime?.title || "Unknown Title";
                     const localLink = getLocalLink(animeTitle);
                     
                     return (
-                      <div key={item.anime?.mal_id} style={styles.shelfCard}>
+                      <div key={item.anime?.mal_id || idx} style={styles.shelfCard}>
                         <div style={styles.shelfPosterWrap}>
                           <img src={item.anime?.images?.jpg?.image_url} alt="" style={styles.shelfPoster} />
                           <div style={styles.shelfProgress}>
@@ -256,11 +305,11 @@ export const MalProfileModal = () => {
                           <span style={styles.shelfTitle}>{animeTitle}</span>
                           {localLink ? (
                             <Link to={localLink} onClick={() => setShowMalProfileModal(false)} style={styles.localWatchBtn}>
-                              Watch
+                              <i className="fa-solid fa-play" style={{ fontSize: "8px", marginRight: "3px" }}></i> Watch
                             </Link>
                           ) : (
                             <a href={item.anime?.url} target="_blank" rel="noopener noreferrer" style={styles.malDetailsLink}>
-                              MAL <i className="fa-solid fa-up-right-from-square" style={{ fontSize: "8px" }}></i>
+                              Link <i className="fa-solid fa-up-right-from-square" style={{ fontSize: "8px" }}></i>
                             </a>
                           )}
                         </div>
@@ -291,7 +340,7 @@ export const MalProfileModal = () => {
 
           </div>
 
-          {/* RIGHT COLUMN: Premium SVG Charts */}
+          {/* RIGHT COLUMN: Premium MAL SVG Charts & Statistics */}
           <div style={styles.rightCol} ref={chartContainerRef}>
             
             {/* Chart Tab bar */}
@@ -300,19 +349,25 @@ export const MalProfileModal = () => {
                 style={{ ...styles.tabBtn, ...(activeTab === "footprint" ? styles.tabBtnActive : {}) }}
                 onClick={() => setActiveTab("footprint")}
               >
-                <i className="fa-solid fa-spider" style={{ marginRight: "6px" }}></i> Footprint
+                <i className="fa-solid fa-bullseye" style={{ marginRight: "6px" }}></i> Footprint
               </button>
               <button
                 style={{ ...styles.tabBtn, ...(activeTab === "distribution" ? styles.tabBtnActive : {}) }}
                 onClick={() => setActiveTab("distribution")}
               >
-                <i className="fa-solid fa-chart-column" style={{ marginRight: "6px" }}></i> Distribution
+                <i className="fa-solid fa-chart-column" style={{ marginRight: "6px" }}></i> Status
+              </button>
+              <button
+                style={{ ...styles.tabBtn, ...(activeTab === "scores" ? styles.tabBtnActive : {}) }}
+                onClick={() => setActiveTab("scores")}
+              >
+                <i className="fa-solid fa-star" style={{ marginRight: "6px" }}></i> Scores
               </button>
               <button
                 style={{ ...styles.tabBtn, ...(activeTab === "formats" ? styles.tabBtnActive : {}) }}
                 onClick={() => setActiveTab("formats")}
               >
-                <i className="fa-solid fa-chart-pie" style={{ marginRight: "6px" }}></i> Formats
+                <i className="fa-solid fa-film" style={{ marginRight: "6px" }}></i> Formats
               </button>
             </div>
 
@@ -323,21 +378,21 @@ export const MalProfileModal = () => {
               {activeTab === "footprint" && (
                 <div style={styles.chartContainer}>
                   <div style={styles.chartHeading}>
-                    <h5>Anime Footprint Footprint</h5>
-                    <p>Spider metrics footprint normalized against top community standards.</p>
+                    <h5>Anime Overview Footprint</h5>
+                    <p>Metrics normalized against MyAnimeList community standards.</p>
                   </div>
                   
                   <svg width="240" height="240" viewBox="0 0 240 240" style={styles.svgCanvas}>
                     <defs>
                       <radialGradient id="radarRadial" cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stop-color="hsl(340 100% 50% / 0.05)" />
-                        <stop offset="70%" stop-color="hsl(340 100% 50% / 0.15)" />
-                        <stop offset="100%" stop-color="hsl(280 85% 55% / 0.35)" />
+                        <stop offset="0%" stopColor="rgba(46, 81, 162, 0.15)" />
+                        <stop offset="70%" stopColor="rgba(56, 189, 248, 0.25)" />
+                        <stop offset="100%" stopColor="rgba(46, 81, 162, 0.45)" />
                       </radialGradient>
                       <linearGradient id="radarOutline" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="hsl(340 100% 55%)" />
-                        <stop offset="50%" stop-color="hsl(300 90% 50%)" />
-                        <stop offset="100%" stop-color="hsl(260 95% 60%)" />
+                        <stop offset="0%" stopColor="#38bdf8" />
+                        <stop offset="50%" stopColor="#2e51a2" />
+                        <stop offset="100%" stopColor="#8b5cf6" />
                       </linearGradient>
                     </defs>
 
@@ -356,7 +411,7 @@ export const MalProfileModal = () => {
                           key={idx}
                           points={gridPoints}
                           fill="none"
-                          stroke={idx % 2 === 0 ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)"}
+                          stroke={idx % 2 === 0 ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)"}
                           strokeWidth="1"
                           strokeDasharray={idx === 1 ? "3 2" : "none"}
                           className="radar-grid"
@@ -376,7 +431,7 @@ export const MalProfileModal = () => {
                           y1={center}
                           x2={outerX}
                           y2={outerY}
-                          stroke="rgba(255,255,255,0.05)"
+                          stroke="rgba(255,255,255,0.08)"
                           strokeWidth="1"
                         />
                       );
@@ -389,7 +444,7 @@ export const MalProfileModal = () => {
                       stroke="url(#radarOutline)"
                       strokeWidth="2.5"
                       className="radar-path"
-                      style={{ filter: "drop-shadow(0 0 8px hsl(340 100% 50% / 0.5))" }}
+                      style={{ filter: "drop-shadow(0 0 10px rgba(56, 189, 248, 0.4))" }}
                     />
 
                     {/* Data Points vertices */}
@@ -400,26 +455,26 @@ export const MalProfileModal = () => {
                           cx={p.x}
                           cy={p.y}
                           r="7"
-                          fill="hsl(340 100% 50%)"
-                          opacity="0.25"
+                          fill="#38bdf8"
+                          opacity="0.3"
                         />
                         <circle
                           cx={p.x}
                           cy={p.y}
                           r="4"
-                          fill="white"
-                          stroke="url(#radarOutline)"
+                          fill="#ffffff"
+                          stroke="#38bdf8"
                           strokeWidth="2"
                         />
                         {/* Values tooltips */}
                         <text
                           x={p.x}
                           y={p.y - 10}
-                          fill="var(--text-title)"
+                          fill="#f8fafc"
                           fontSize="9.5"
                           fontWeight="800"
                           textAnchor="middle"
-                          style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}
+                          style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.8))" }}
                         >
                           {p.val}
                         </text>
@@ -431,14 +486,14 @@ export const MalProfileModal = () => {
                       const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
                       const textRadius = maxRadius + 20;
                       const x = center + textRadius * Math.cos(angle);
-                      const y = center + textRadius * Math.sin(angle) + 3; // vertical adjustment
+                      const y = center + textRadius * Math.sin(angle) + 3;
                       
                       return (
                         <text
                           key={i}
                           x={x}
                           y={y}
-                          fill="var(--text-desc)"
+                          fill="#94a3b8"
                           fontSize="9.5"
                           fontWeight="700"
                           letterSpacing="0.3px"
@@ -452,50 +507,49 @@ export const MalProfileModal = () => {
                 </div>
               )}
 
-              {/* TAB 2: BAR GRAPH CHART */}
+              {/* TAB 2: STATUS DISTRIBUTION BAR GRAPH CHART */}
               {activeTab === "distribution" && (
                 <div style={styles.chartContainer}>
                   <div style={styles.chartHeading}>
-                    <h5>Library Distribution</h5>
-                    <p>Comparison of anime library status counts across your catalog.</p>
+                    <h5>Anime Status Distribution</h5>
+                    <p>Comparison of anime status counts in your MyAnimeList profile.</p>
                   </div>
 
-                  <svg width="240" height="180" viewBox="0 0 240 180" style={styles.svgCanvas}>
+                  <svg width="250" height="180" viewBox="0 0 250 180" style={styles.svgCanvas}>
                     <defs>
                       <linearGradient id="gradWatching" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="hsl(340 100% 65%)" />
-                        <stop offset="100%" stop-color="hsl(340 100% 35%)" />
+                        <stop offset="0%" stopColor="#38bdf8" />
+                        <stop offset="100%" stopColor="#0284c7" />
                       </linearGradient>
                       <linearGradient id="gradCompleted" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="hsl(145 80% 60%)" />
-                        <stop offset="100%" stop-color="hsl(145 80% 30%)" />
+                        <stop offset="0%" stopColor="#22c55e" />
+                        <stop offset="100%" stopColor="#15803d" />
                       </linearGradient>
                       <linearGradient id="gradHold" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="hsl(45 95% 60%)" />
-                        <stop offset="100%" stop-color="hsl(45 95% 30%)" />
+                        <stop offset="0%" stopColor="#f59e0b" />
+                        <stop offset="100%" stopColor="#b45309" />
                       </linearGradient>
                       <linearGradient id="gradDropped" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="hsl(350 90% 60%)" />
-                        <stop offset="100%" stop-color="hsl(350 90% 30%)" />
+                        <stop offset="0%" stop-color="#ef4444" />
+                        <stop offset="100%" stop-color="#b91c1c" />
                       </linearGradient>
                       <linearGradient id="gradPlan" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="hsl(200 90% 60%)" />
-                        <stop offset="100%" stop-color="hsl(200 90% 30%)" />
+                        <stop offset="0%" stopColor="#8b5cf6" />
+                        <stop offset="100%" stopColor="#6d28d9" />
                       </linearGradient>
                     </defs>
 
                     {/* Background Grid Lines */}
-                    <line x1="15" y1="30" x2="225" y2="30" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-                    <line x1="15" y1="80" x2="225" y2="80" stroke="rgba(255,255,255,0.03)" strokeWidth="1" strokeDasharray="3 3" />
-                    <line x1="15" y1="130" x2="225" y2="130" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                    <line x1="15" y1="30" x2="235" y2="30" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                    <line x1="15" y1="80" x2="235" y2="80" stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="3 3" />
+                    <line x1="15" y1="130" x2="235" y2="130" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
                     
                     {barData.map((bar, i) => {
-                      const x = 24 + i * 40;
+                      const x = 20 + i * 44;
                       const maxBarHeight = 110;
                       const h = Math.max(8, (bar.count / maxBarVal) * maxBarHeight);
                       const y = 140 - h;
 
-                      // Map colors to gradients
                       let gradId = "gradWatching";
                       if (bar.label === "Completed") gradId = "gradCompleted";
                       else if (bar.label === "On Hold") gradId = "gradHold";
@@ -504,29 +558,29 @@ export const MalProfileModal = () => {
 
                       return (
                         <g key={i}>
-                          {/* Backing Track (Glassmorphism slot) */}
+                          {/* Backing Track */}
                           <rect
                             x={x}
                             y={30}
-                            width="24"
+                            width="26"
                             height={maxBarHeight}
-                            rx="4"
-                            ry="4"
-                            fill="rgba(255,255,255,0.02)"
-                            stroke="rgba(255,255,255,0.04)"
+                            rx="5"
+                            ry="5"
+                            fill="rgba(255,255,255,0.03)"
+                            stroke="rgba(255,255,255,0.06)"
                             strokeWidth="0.5"
                           />
 
                           {/* Value above the bar */}
                           <text
-                            x={x + 12}
+                            x={x + 13}
                             y={y - 6}
-                            fill="var(--text-title)"
+                            fill="#f8fafc"
                             fontSize="9.5"
                             fontWeight="800"
                             textAnchor="middle"
                             className="bar-value"
-                            style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.4))" }}
+                            style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.6))" }}
                           >
                             {bar.count}
                           </text>
@@ -535,21 +589,21 @@ export const MalProfileModal = () => {
                           <rect
                             x={x}
                             y={y}
-                            width="24"
+                            width="26"
                             height={h}
-                            rx="4"
-                            ry="4"
+                            rx="5"
+                            ry="5"
                             fill={`url(#${gradId})`}
                             className="chart-bar"
-                            style={{ filter: `drop-shadow(0 0 5px ${bar.color}45)` }}
+                            style={{ filter: `drop-shadow(0 0 6px ${bar.color}60)` }}
                           />
 
                           {/* Labels below the bar */}
                           <text
-                            x={x + 12}
+                            x={x + 13}
                             y="155"
-                            fill="var(--text-desc)"
-                            fontSize="8"
+                            fill="#94a3b8"
+                            fontSize="8.5"
                             fontWeight="700"
                             textAnchor="middle"
                           >
@@ -562,7 +616,47 @@ export const MalProfileModal = () => {
                 </div>
               )}
 
-              {/* TAB 3: DOUGHNUT FORMAT CHART */}
+              {/* TAB 3: SCORE / RATING DISTRIBUTION GRAPH */}
+              {activeTab === "scores" && (
+                <div style={styles.chartContainer}>
+                  <div style={styles.chartHeading}>
+                    <h5>Score Rating Distribution</h5>
+                    <p>Histogram of scores given across rated anime entries on MyAnimeList.</p>
+                  </div>
+
+                  <div style={styles.scoresListContainer}>
+                    {scoresData.map((item) => {
+                      const percentage = item.percentage || ((item.count / totalVotes) * 100).toFixed(1);
+                      const widthPercent = maxScoreCount > 0 ? (item.count / maxScoreCount) * 100 : 0;
+
+                      return (
+                        <div key={item.score} style={styles.scoreRow}>
+                          <span style={styles.scoreLabel}>
+                            {item.score} <i className="fa-solid fa-star" style={{ fontSize: "9px", color: "#f59e0b" }}></i>
+                          </span>
+
+                          <div style={styles.scoreTrack}>
+                            <div
+                              className="score-bar-fill"
+                              style={{
+                                ...styles.scoreFill,
+                                width: `${widthPercent}%`,
+                                background: item.score >= 8 ? "linear-gradient(90deg, #22c55e, #38bdf8)" : item.score >= 5 ? "linear-gradient(90deg, #f59e0b, #eab308)" : "linear-gradient(90deg, #ef4444, #f97316)"
+                              }}
+                            ></div>
+                          </div>
+
+                          <span style={styles.scoreValue}>
+                            {item.count} <small style={{ color: "#64748b", fontWeight: "600" }}>({percentage}%)</small>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: DOUGHNUT FORMAT CHART */}
               {activeTab === "formats" && (
                 <div style={styles.chartContainer}>
                   <div style={styles.chartHeading}>
@@ -570,31 +664,31 @@ export const MalProfileModal = () => {
                     <p>Format categories computed dynamically from active watchlist titles.</p>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "24px", width: "100%" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "28px", width: "100%" }}>
                     
                     <svg width="150" height="150" viewBox="0 0 150 150" style={{ flexShrink: 0 }}>
                       <defs>
                         <linearGradient id="doughnutTV" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stop-color="hsl(340 100% 65%)" />
-                          <stop offset="100%" stop-color="hsl(290 100% 50%)" />
+                          <stop offset="0%" stopColor="#38bdf8" />
+                          <stop offset="100%" stopColor="#2563eb" />
                         </linearGradient>
                         <linearGradient id="doughnutMovie" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stop-color="hsl(145 80% 60%)" />
-                          <stop offset="100%" stop-color="hsl(170 80% 40%)" />
+                          <stop offset="0%" stopColor="#22c55e" />
+                          <stop offset="100%" stopColor="#059669" />
                         </linearGradient>
                         <linearGradient id="doughnutONA" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stop-color="hsl(200 90% 60%)" />
-                          <stop offset="100%" stop-color="hsl(220 90% 40%)" />
+                          <stop offset="0%" stopColor="#8b5cf6" />
+                          <stop offset="100%" stopColor="#6d28d9" />
                         </linearGradient>
                         <linearGradient id="doughnutOVA" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stop-color="hsl(45 95% 60%)" />
-                          <stop offset="100%" stop-color="hsl(25 95% 45%)" />
+                          <stop offset="0%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#d97706" />
                         </linearGradient>
                       </defs>
 
-                      {/* Tech HUD Outer & Inner Accent Rings */}
-                      <circle cx="75" cy="75" r="56" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.75" strokeDasharray="3 3" />
-                      <circle cx="75" cy="75" r="34" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.75" strokeDasharray="3 3" />
+                      {/* Inner & Outer Rings */}
+                      <circle cx="75" cy="75" r="56" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.75" strokeDasharray="3 3" />
+                      <circle cx="75" cy="75" r="34" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.75" strokeDasharray="3 3" />
 
                       <g className="doughnut-group">
                         
@@ -604,7 +698,7 @@ export const MalProfileModal = () => {
                           cy="75"
                           r="45"
                           fill="none"
-                          stroke="rgba(255,255,255,0.03)"
+                          stroke="rgba(255,255,255,0.04)"
                           strokeWidth="12"
                         />
 
@@ -630,13 +724,13 @@ export const MalProfileModal = () => {
                               stroke={`url(#${gradId})`}
                               strokeWidth="12"
                               strokeDasharray={`${dash} 282.74`}
-                              strokeDashoffset="282.74" // Init offset for animation
+                              strokeDashoffset="282.74"
                               data-target-offset={offset}
                               className="doughnut-segment"
                               transform="rotate(-90 75 75)"
                               strokeLinecap="round"
                               style={{
-                                filter: `drop-shadow(0 0 5px ${seg.color}50)`,
+                                filter: `drop-shadow(0 0 6px ${seg.color}60)`,
                                 transition: "stroke-dashoffset 1s ease-out"
                               }}
                             />
@@ -649,8 +743,8 @@ export const MalProfileModal = () => {
                         <text
                           x="75"
                           y="72"
-                          fill="var(--text-title)"
-                          fontSize="15"
+                          fill="#f8fafc"
+                          fontSize="16"
                           fontWeight="800"
                           textAnchor="middle"
                         >
@@ -659,8 +753,8 @@ export const MalProfileModal = () => {
                         <text
                           x="75"
                           y="85"
-                          fill="var(--muted)"
-                          fontSize="7"
+                          fill="#94a3b8"
+                          fontSize="8"
                           fontWeight="700"
                           letterSpacing="0.5px"
                           textAnchor="middle"
@@ -701,36 +795,47 @@ const styles = {
   overlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(6, 5, 10, 0.78)",
-    backdropFilter: "blur(10px)",
+    background: "rgba(6, 10, 20, 0.82)",
+    backdropFilter: "blur(12px)",
     zIndex: 99999,
-    display: "grid",
-    placeItems: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     padding: "20px",
+    overflowY: "auto",
     animation: "fadeIn 0.28s ease-out"
   },
   modal: {
-    background: "linear-gradient(135deg, hsl(240 18% 7% / 0.92) 0%, hsl(240 18% 4% / 0.96) 100%)",
-    border: "1px solid hsl(240 18% 12% / 0.6)",
-    boxShadow: "0 24px 60px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06)",
+    background: "linear-gradient(145deg, #0e172a 0%, #0a1122 100%)",
+    border: "1px solid #1e293b",
+    boxShadow: "0 24px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
     borderRadius: "20px",
     width: "100%",
-    maxWidth: "920px",
+    maxWidth: "940px",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    WebkitOverflowScrolling: "touch",
     position: "relative",
-    padding: "36px 32px",
-    boxSizing: "border-box"
+    padding: "32px 28px",
+    boxSizing: "border-box",
+    margin: "auto"
   },
   closeBtn: {
     position: "absolute",
     top: "16px",
     right: "16px",
-    background: "none",
-    border: "none",
-    color: "var(--muted)",
-    fontSize: "18px",
+    background: "rgba(255, 255, 255, 0.05)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    color: "#94a3b8",
+    fontSize: "16px",
     cursor: "pointer",
-    padding: "6px",
-    transition: "color 0.2s",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.2s ease",
     zIndex: 10
   },
   dashboardGrid: {
@@ -742,7 +847,7 @@ const styles = {
   leftCol: {
     display: "flex",
     flexDirection: "column",
-    borderRight: "1px solid hsl(240 18% 12% / 0.7)",
+    borderRight: "1px solid #1e293b",
     paddingRight: "36px"
   },
   rightCol: {
@@ -758,8 +863,8 @@ const styles = {
   },
   avatarContainer: {
     position: "relative",
-    width: "48px",
-    height: "48px",
+    width: "52px",
+    height: "52px",
     flexShrink: 0
   },
   avatar: {
@@ -767,19 +872,19 @@ const styles = {
     height: "100%",
     borderRadius: "50%",
     objectFit: "cover",
-    border: "2px solid var(--accent)"
+    border: "2px solid #2e51a2"
   },
   badge: {
     position: "absolute",
     bottom: "-2px",
     right: "-4px",
     background: "#2e51a2",
-    color: "white",
-    fontSize: "8px",
+    color: "#ffffff",
+    fontSize: "8.5px",
     fontWeight: "800",
-    padding: "1px 4px",
+    padding: "1px 5px",
     borderRadius: "3px",
-    border: "1px solid hsl(240 18% 7%)"
+    border: "1px solid #0f172a"
   },
   headerInfo: {
     display: "flex",
@@ -787,30 +892,41 @@ const styles = {
     gap: "4px"
   },
   usernameLink: {
-    color: "var(--text)",
+    color: "#f8fafc",
     textDecoration: "none",
     outline: "none",
     margin: "0"
   },
   statusBadge: {
     alignSelf: "flex-start",
-    fontSize: "9px",
+    fontSize: "9.5px",
     fontWeight: "700",
-    color: "hsl(145 60% 50%)",
-    background: "hsl(145 60% 50% / 0.12)",
+    color: "#22c55e",
+    background: "rgba(34, 197, 94, 0.12)",
     padding: "2px 8px",
     borderRadius: "20px",
-    border: "1px solid hsl(145 60% 50% / 0.25)",
+    border: "1px solid rgba(34, 197, 94, 0.25)",
     textTransform: "uppercase",
     letterSpacing: "0.5px"
   },
+  sourceBadge: {
+    alignSelf: "flex-start",
+    fontSize: "9px",
+    fontWeight: "700",
+    color: "#38bdf8",
+    background: "rgba(56, 189, 248, 0.12)",
+    padding: "2px 8px",
+    borderRadius: "20px",
+    border: "1px solid rgba(56, 189, 248, 0.25)",
+    letterSpacing: "0.4px"
+  },
   mockWarning: {
-    background: "hsl(45 90% 55% / 0.1)",
-    border: "1px solid hsl(45 90% 55% / 0.2)",
-    color: "hsl(45 90% 55%)",
+    background: "rgba(245, 158, 11, 0.1)",
+    border: "1px solid rgba(245, 158, 11, 0.25)",
+    color: "#f59e0b",
     padding: "8px 12px",
     borderRadius: "8px",
-    fontSize: "10px",
+    fontSize: "10.5px",
     lineHeight: "1.4",
     display: "flex",
     alignItems: "flex-start",
@@ -819,34 +935,33 @@ const styles = {
   sidebarStats: {
     display: "flex",
     flexDirection: "column",
-    gap: "10px",
-    background: "hsl(240 18% 4% / 0.6)",
-    border: "1px solid var(--border)",
-    borderRadius: "10px",
-    padding: "14px 16px"
+    gap: "11px",
+    background: "#131c2e",
+    border: "1px solid #1e293b",
+    borderRadius: "12px",
+    padding: "16px"
   },
   sidebarStatRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     fontSize: "12px",
-    color: "var(--text-desc)",
-    "strong": {
-      color: "var(--text)",
-      fontWeight: "750"
-    }
+    color: "#94a3b8",
+    fontWeight: "500"
   },
   sectionTitle: {
     fontSize: "11px",
     fontWeight: "750",
-    color: "var(--muted)",
+    color: "#64748b",
     textTransform: "uppercase",
     letterSpacing: "0.8px",
-    margin: "0 0 10px 0"
+    margin: "0 0 12px 0",
+    display: "flex",
+    alignItems: "center"
   },
   emptyText: {
     fontSize: "11px",
-    color: "var(--muted)",
+    color: "#64748b",
     textAlign: "center",
     margin: "12px 0"
   },
@@ -854,14 +969,15 @@ const styles = {
     display: "flex",
     gap: "10px",
     overflowX: "auto",
-    paddingBottom: "4px"
+    WebkitOverflowScrolling: "touch",
+    paddingBottom: "6px"
   },
   shelfCard: {
-    width: "82px",
+    width: "86px",
     flexShrink: 0,
-    background: "hsl(240 18% 4% / 0.4)",
-    border: "1px solid var(--border)",
-    borderRadius: "6px",
+    background: "#131c2e",
+    border: "1px solid #1e293b",
+    borderRadius: "8px",
     overflow: "hidden",
     display: "flex",
     flexDirection: "column"
@@ -869,7 +985,7 @@ const styles = {
   shelfPosterWrap: {
     position: "relative",
     width: "100%",
-    height: "100px"
+    height: "104px"
   },
   shelfPoster: {
     width: "100%",
@@ -881,56 +997,57 @@ const styles = {
     bottom: "2px",
     left: "2px",
     right: "2px",
-    background: "rgba(0, 0, 0, 0.8)",
-    color: "var(--text)",
+    background: "rgba(0, 0, 0, 0.82)",
+    color: "#f8fafc",
     fontSize: "8px",
-    padding: "1px 2px",
-    borderRadius: "2px",
+    padding: "1px 3px",
+    borderRadius: "3px",
     textAlign: "center",
     fontWeight: "700"
   },
   shelfInfo: {
-    padding: "4px",
+    padding: "5px",
     display: "flex",
     flexDirection: "column",
     gap: "4px"
   },
   shelfTitle: {
-    fontSize: "9px",
+    fontSize: "9.5px",
     fontWeight: "650",
-    color: "var(--text-title)",
+    color: "#f1f5f9",
     lineHeight: "1.2",
     display: "-webkit-box",
     WebkitLineClamp: 2,
     WebkitBoxOrient: "vertical",
     overflow: "hidden",
-    height: "22px"
+    height: "23px"
   },
   localWatchBtn: {
-    background: "var(--accent)",
-    color: "hsl(220 25% 5%)",
+    background: "#2e51a2",
+    color: "#ffffff",
     textDecoration: "none",
-    fontSize: "8px",
+    fontSize: "8.5px",
     fontWeight: "750",
-    padding: "3px 0",
-    borderRadius: "3px",
+    padding: "4px 0",
+    borderRadius: "4px",
     textAlign: "center",
-    display: "block"
+    display: "block",
+    transition: "background 0.2s"
   },
   malDetailsLink: {
-    color: "var(--muted)",
+    color: "#94a3b8",
     textDecoration: "none",
-    fontSize: "8px",
+    fontSize: "8.5px",
     textAlign: "center",
     padding: "3px 0",
-    border: "1px solid var(--border)",
-    borderRadius: "3px",
+    border: "1px solid #1e293b",
+    borderRadius: "4px",
     display: "block"
   },
   syncAlert: {
-    background: "hsl(172 66% 50% / 0.1)",
-    border: "1px solid hsl(172 66% 50% / 0.2)",
-    color: "var(--accent)",
+    background: "rgba(56, 189, 248, 0.12)",
+    border: "1px solid rgba(56, 189, 248, 0.25)",
+    color: "#38bdf8",
     padding: "8px 12px",
     borderRadius: "8px",
     fontSize: "11px",
@@ -942,41 +1059,43 @@ const styles = {
     display: "flex",
     gap: "10px",
     marginTop: "20px",
-    borderTop: "1px solid hsl(240 18% 12% / 0.5)",
+    borderTop: "1px solid #1e293b",
     paddingTop: "20px"
   },
   syncBtn: {
     flexGrow: 1,
-    background: "hsl(240 18% 10% / 0.7)",
-    border: "1px solid var(--border)",
-    color: "var(--text)",
-    borderRadius: "6px",
-    padding: "8px 12px",
+    background: "#1e293b",
+    border: "1px solid #334155",
+    color: "#f8fafc",
+    borderRadius: "8px",
+    padding: "9px 12px",
     fontWeight: "600",
     fontSize: "12px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    transition: "background 0.2s"
   },
   unlinkBtn: {
-    background: "hsl(350 85% 55% / 0.12)",
-    border: "1px solid hsl(350 85% 55% / 0.25)",
-    color: "hsl(350 85% 55%)",
-    borderRadius: "6px",
-    padding: "8px 12px",
+    background: "rgba(239, 68, 68, 0.12)",
+    border: "1px solid rgba(239, 68, 68, 0.25)",
+    color: "#ef4444",
+    borderRadius: "8px",
+    padding: "9px 12px",
     fontWeight: "600",
     fontSize: "12px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    transition: "background 0.2s"
   },
   tabBar: {
     display: "flex",
-    background: "hsl(240 18% 4% / 0.7)",
-    border: "1px solid var(--border)",
-    borderRadius: "8px",
+    background: "#0b1120",
+    border: "1px solid #1e293b",
+    borderRadius: "10px",
     padding: "4px",
     gap: "4px"
   },
@@ -984,26 +1103,26 @@ const styles = {
     flexGrow: 1,
     background: "none",
     border: "none",
-    color: "var(--muted)",
-    padding: "8px 16px",
-    fontSize: "12px",
+    color: "#94a3b8",
+    padding: "8px 12px",
+    fontSize: "11.5px",
     fontWeight: "600",
-    borderRadius: "6px",
+    borderRadius: "7px",
     cursor: "pointer",
-    transition: "background 0.2s, color 0.2s"
+    transition: "all 0.2s ease"
   },
   tabBtnActive: {
-    background: "linear-gradient(135deg, hsl(240 18% 12%) 0%, hsl(240 18% 8%) 100%)",
-    color: "var(--accent)",
-    border: "1px solid hsl(240 18% 16% / 0.4)",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
+    background: "linear-gradient(135deg, #1e293b 0%, #172033 100%)",
+    color: "#38bdf8",
+    border: "1px solid #334155",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
   },
   chartViewport: {
-    background: "hsl(240 18% 3% / 0.5)",
-    border: "1px solid var(--border)",
-    borderRadius: "12px",
-    padding: "28px",
-    minHeight: "300px",
+    background: "#0b1120",
+    border: "1px solid #1e293b",
+    borderRadius: "14px",
+    padding: "24px 20px",
+    minHeight: "310px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center"
@@ -1016,22 +1135,63 @@ const styles = {
   },
   chartHeading: {
     textAlign: "center",
-    marginBottom: "24px",
+    marginBottom: "20px",
     "h5": {
       fontSize: "14px",
       fontWeight: "750",
-      color: "var(--text)",
+      color: "#f8fafc",
       margin: "0 0 4px 0"
     },
     "p": {
       fontSize: "11px",
-      color: "var(--muted)",
+      color: "#94a3b8",
       margin: "0"
     }
   },
   svgCanvas: {
     overflow: "visible",
     display: "block"
+  },
+  scoresListContainer: {
+    width: "100%",
+    maxWidth: "460px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "7px"
+  },
+  scoreRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    fontSize: "11.5px"
+  },
+  scoreLabel: {
+    width: "42px",
+    fontWeight: "750",
+    color: "#f8fafc",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  scoreTrack: {
+    flexGrow: 1,
+    height: "12px",
+    background: "rgba(255, 255, 255, 0.04)",
+    borderRadius: "6px",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    overflow: "hidden"
+  },
+  scoreFill: {
+    height: "100%",
+    borderRadius: "6px",
+    transition: "width 0.8s ease-out"
+  },
+  scoreValue: {
+    width: "75px",
+    textAlign: "right",
+    fontWeight: "700",
+    color: "#f8fafc",
+    fontSize: "11px"
   },
   legendList: {
     display: "flex",
@@ -1041,7 +1201,7 @@ const styles = {
   legendRow: {
     display: "flex",
     alignItems: "center",
-    fontSize: "11px"
+    fontSize: "11.5px"
   },
   legendDot: {
     width: "8px",
@@ -1051,13 +1211,14 @@ const styles = {
     display: "inline-block"
   },
   legendLabel: {
-    color: "var(--text-desc)",
+    color: "#94a3b8",
     fontWeight: "600",
-    width: "60px"
+    width: "64px"
   },
   legendVal: {
-    color: "var(--text)",
+    color: "#f8fafc",
     fontWeight: "700"
   }
 };
+
 export default MalProfileModal;

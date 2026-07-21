@@ -25,6 +25,17 @@ export const SiteHeader = () => {
   const [suggestions, setSuggestions] = useState([]);
   const autocompleteRef = useRef(null);
 
+  const inputRef = useRef(null);
+
+  // Sync body.search-open class for mobile search overlay styling
+  useEffect(() => {
+    if (searchOpen) {
+      document.body.classList.add("search-open");
+    } else {
+      document.body.classList.remove("search-open");
+    }
+  }, [searchOpen]);
+
   // Close search suggestions on click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -56,18 +67,24 @@ export const SiteHeader = () => {
   };
 
   const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/filter?keyword=${encodeURIComponent(searchQuery.trim())}`);
-      setSuggestions([]);
-      setSearchOpen(false);
+    if (e) e.preventDefault();
+    const query = searchQuery.trim();
+    if (query) {
+      navigate(`/filter?keyword=${encodeURIComponent(query)}`);
+    } else {
+      navigate(`/filter`);
     }
+    setSuggestions([]);
+    setSearchOpen(false);
+    setSearchFocused(false);
+    if (inputRef.current) inputRef.current.blur();
   };
 
   const handleSuggestionClick = (id) => {
     setSuggestions([]);
     setSearchQuery("");
     setSearchOpen(false);
+    setSearchFocused(false);
     navigate(`/anime/${id}`);
   };
 
@@ -78,16 +95,15 @@ export const SiteHeader = () => {
   };
 
   return (
-    <header className="site-header">
+    <header className={`site-header ${searchOpen ? "search-open" : ""}`}>
       <div className="site-header__inner">
-
 
         {/* Brand Logo */}
         <Link
           to="/home"
           className="brand"
           style={{
-            display: searchFocused ? "none" : "flex",
+            display: "flex",
             alignItems: "center",
             textDecoration: "none",
             transform: "translateY(-4px)",
@@ -117,6 +133,7 @@ export const SiteHeader = () => {
           <div className="search-inner">
             <form className="header-search" onSubmit={handleSearchSubmit}>
               <input
+                ref={inputRef}
                 type="search"
                 placeholder="Search anime on Weaboo…"
                 autoComplete="off"
@@ -127,6 +144,11 @@ export const SiteHeader = () => {
                   setTimeout(() => {
                     if (!searchQuery) setSearchFocused(false);
                   }, 200);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearchSubmit(e);
+                  }
                 }}
               />
 
@@ -158,7 +180,20 @@ export const SiteHeader = () => {
                 type="submit"
                 className="search-submit-btn"
                 aria-label="Search"
-                style={{ background: "none", border: "none", outline: "none", boxShadow: "none", padding: "0 8px", cursor: "pointer" }}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleSearchSubmit}
+                style={{
+                  background: "none",
+                  border: "none",
+                  outline: "none",
+                  boxShadow: "none",
+                  padding: "0 8px",
+                  cursor: "pointer",
+                  color: "var(--muted)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
               >
                 <i className="fa-solid fa-magnifying-glass"></i>
               </button>
@@ -211,7 +246,14 @@ export const SiteHeader = () => {
           <button
             type="button"
             className="search-toggle"
-            onClick={() => setSearchOpen(!searchOpen)}
+            onClick={() => {
+              const nextState = !searchOpen;
+              setSearchOpen(nextState);
+              if (nextState) {
+                setSearchFocused(true);
+                setTimeout(() => inputRef.current?.focus(), 100);
+              }
+            }}
             aria-label="Open search"
           >
             <i className="fa-solid fa-magnifying-glass"></i>

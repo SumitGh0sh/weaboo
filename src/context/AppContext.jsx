@@ -155,90 +155,215 @@ export const AppProvider = ({ children }) => {
   };
 
   // MAL link methods
-  const linkMalUser = async (username) => {
+  // MAL & AniList hybrid profile link method
+  const linkMalUser = async (rawUsername) => {
+    const username = rawUsername.trim();
+    if (!username) return { success: false, error: "Username cannot be empty" };
+
+    // 1. Try Jikan API v4 for MyAnimeList
     try {
-      // 1. Fetch user summary profile
-      const resProfile = await fetchWithRetry(`https://api.jikan.moe/v4/users/${encodeURIComponent(username.trim())}`);
+      const resProfile = await fetchWithRetry(`https://api.jikan.moe/v4/users/${encodeURIComponent(username)}/full`);
       
-      if (!resProfile.ok) {
-        if (resProfile.status === 404) throw new Error("MAL profile not found");
-        
-        console.warn(`Jikan profile scraping failed with status ${resProfile.status}. Triggering MAL mock profile fallback.`);
-        const mappedUser = {
-          username: username.trim(),
-          url: `https://myanimelist.net/profile/${encodeURIComponent(username.trim())}`,
-          avatar: "https://placehold.co/150/141824/3cd6ff?text=" + username.substring(0, 3).toUpperCase(),
-          daysWatched: 63.8, // Fallback stats representing standard data
-          meanScore: 8.15,
-          watchingCount: 2,
-          completedCount: 140,
-          onHoldCount: 21,
-          droppedCount: 8,
-          planToWatchCount: 85,
-          episodesWatched: 4805,
-          isMocked: true
-        };
+      if (resProfile.ok) {
+        const profileJson = await resProfile.json();
+        if (profileJson && profileJson.data) {
+          const profile = profileJson.data;
 
-        const mockWatching = [
-          {
-            anime: {
-              mal_id: 1,
-              title: "One Piece",
-              images: { jpg: { image_url: "https://cdn.anipixcdn.co/thumbnail/f899139df5e1059396431415e770c6dd.jpg" } }
-            },
-            episodes_watched: 1152,
-            episodes_total: 1200
-          },
-          {
-            anime: {
-              mal_id: 2,
-              title: "Solo Leveling Season 2: Arise from the Shadow",
-              images: { jpg: { image_url: "https://cdn.anipixcdn.co/thumbnail/4b5ed938de41e4ff532c02c27dfd143a.jpg" } }
-            },
-            episodes_watched: 6,
-            episodes_total: 13
+          // Fetch watching list
+          const resWatching = await fetchWithRetry(`https://api.jikan.moe/v4/users/${encodeURIComponent(username)}/animelist?status=watching`);
+          let watchingData = [];
+          if (resWatching.ok) {
+            const watchingJson = await resWatching.json();
+            watchingData = watchingJson.data || [];
           }
-        ];
 
-        setMalUser(mappedUser);
-        setMalWatching(mockWatching);
-        return { success: true, isMocked: true };
+          const mappedUser = {
+            username: profile.username,
+            url: profile.url || `https://myanimelist.net/profile/${profile.username}`,
+            avatar: profile.images?.jpg?.image_url || profile.images?.webp?.image_url || "https://placehold.co/150/141824/3cd6ff?text=MAL",
+            daysWatched: profile.statistics?.anime?.days_watched || 0,
+            meanScore: profile.statistics?.anime?.mean_score || 0,
+            watchingCount: profile.statistics?.anime?.watching || 0,
+            completedCount: profile.statistics?.anime?.completed || 0,
+            onHoldCount: profile.statistics?.anime?.on_hold || 0,
+            droppedCount: profile.statistics?.anime?.dropped || 0,
+            planToWatchCount: profile.statistics?.anime?.plan_to_watch || 0,
+            episodesWatched: profile.statistics?.anime?.episodes_watched || 0,
+            totalEntries: profile.statistics?.anime?.total_entries || 0,
+            rewatchedCount: profile.statistics?.anime?.rewatched || 0,
+            scores: profile.statistics?.anime?.scores || [
+              { score: 10, count: 0, percentage: 0 },
+              { score: 9, count: 0, percentage: 0 },
+              { score: 8, count: 0, percentage: 0 },
+              { score: 7, count: 0, percentage: 0 },
+              { score: 6, count: 0, percentage: 0 },
+              { score: 5, count: 0, percentage: 0 },
+              { score: 4, count: 0, percentage: 0 },
+              { score: 3, count: 0, percentage: 0 },
+              { score: 2, count: 0, percentage: 0 },
+              { score: 1, count: 0, percentage: 0 }
+            ],
+            source: "MyAnimeList",
+            isMocked: false
+          };
+
+          setMalUser(mappedUser);
+          setMalWatching(watchingData);
+          return { success: true, source: "MyAnimeList" };
+        }
       }
-
-      const profileData = await resProfile.json();
-      if (!profileData || !profileData.data) throw new Error("Invalid profile response");
-
-      // 2. Fetch watching list
-      const resWatching = await fetchWithRetry(`https://api.jikan.moe/v4/users/${encodeURIComponent(username.trim())}/animelist?status=watching`);
-      let watchingData = [];
-      if (resWatching.ok) {
-        const watchingJson = await resWatching.json();
-        watchingData = watchingJson.data || [];
-      }
-
-      const profile = profileData.data;
-      const mappedUser = {
-        username: profile.username,
-        url: profile.url,
-        avatar: profile.images?.jpg?.image_url || "https://placehold.co/150/141824/3cd6ff?text=MAL",
-        daysWatched: profile.statistics?.anime?.days_watched || 0,
-        meanScore: profile.statistics?.anime?.mean_score || 0,
-        watchingCount: profile.statistics?.anime?.watching || 0,
-        completedCount: profile.statistics?.anime?.completed || 0,
-        onHoldCount: profile.statistics?.anime?.on_hold || 0,
-        droppedCount: profile.statistics?.anime?.dropped || 0,
-        planToWatchCount: profile.statistics?.anime?.plan_to_watch || 0,
-        episodesWatched: profile.statistics?.anime?.episodes_watched || 0,
-        isMocked: false
-      };
-
-      setMalUser(mappedUser);
-      setMalWatching(watchingData);
-      return { success: true };
-    } catch (err) {
-      console.error(err);
-      return { success: false, error: err.message };
+    } catch (jikanErr) {
+      console.warn("Jikan v4 API unavailable or limited. Switching to AniList GraphQL fallback...", jikanErr);
     }
+
+    // 2. Try AniList GraphQL API (100% reliable, zero rate limit timeouts)
+    try {
+      const query = `
+        query ($userName: String) {
+          MediaListCollection(userName: $userName, type: ANIME) {
+            user {
+              id
+              name
+              avatar { large }
+              stats {
+                watchedTime
+              }
+            }
+            lists {
+              name
+              status
+              entries {
+                progress
+                score(format: POINT_10)
+                media {
+                  id
+                  idMal
+                  title { english romaji native }
+                  episodes
+                  coverImage { large }
+                  format
+                  meanScore
+                }
+              }
+            }
+          }
+        }
+      `;
+
+      const resAni = await fetch("https://graphql.anilist.co", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, variables: { userName: username } })
+      });
+
+      if (resAni.ok) {
+        const aniJson = await resAni.json();
+        const collection = aniJson.data?.MediaListCollection;
+        if (collection && collection.user) {
+          const user = collection.user;
+          const lists = collection.lists || [];
+
+          let watchingCount = 0;
+          let completedCount = 0;
+          let onHoldCount = 0;
+          let droppedCount = 0;
+          let planToWatchCount = 0;
+          let episodesWatched = 0;
+          let totalEntries = 0;
+
+          const scoresMap = {};
+          for (let i = 1; i <= 10; i++) scoresMap[i] = 0;
+
+          const watchingData = [];
+
+          lists.forEach((list) => {
+            const statusName = (list.status || list.name || "").toUpperCase();
+            list.entries.forEach((entry) => {
+              totalEntries++;
+              const eps = entry.progress || 0;
+              episodesWatched += eps;
+
+              if (entry.score > 0) {
+                const roundedScore = Math.min(10, Math.max(1, Math.round(entry.score)));
+                scoresMap[roundedScore] = (scoresMap[roundedScore] || 0) + 1;
+              }
+
+              if (statusName.includes("CURRENT") || statusName.includes("WATCHING")) {
+                watchingCount++;
+                watchingData.push({
+                  anime: {
+                    mal_id: entry.media?.idMal || entry.media?.id,
+                    title: entry.media?.title?.english || entry.media?.title?.romaji || entry.media?.title?.native || "Anime",
+                    type: entry.media?.format || "TV",
+                    images: {
+                      jpg: {
+                        image_url: entry.media?.coverImage?.large || "https://placehold.co/200x300/141824/50e3c2?text=Poster"
+                      }
+                    },
+                    url: `https://myanimelist.net/anime/${entry.media?.idMal || entry.media?.id}`
+                  },
+                  episodes_watched: entry.progress || 0,
+                  episodes_total: entry.media?.episodes || 0
+                });
+              } else if (statusName.includes("COMPLETED")) {
+                completedCount++;
+              } else if (statusName.includes("PAUSED") || statusName.includes("HOLD")) {
+                onHoldCount++;
+              } else if (statusName.includes("DROPPED")) {
+                droppedCount++;
+              } else if (statusName.includes("PLANNING") || statusName.includes("PLAN")) {
+                planToWatchCount++;
+              }
+            });
+          });
+
+          const totalScoredEntries = Object.values(scoresMap).reduce((a, b) => a + b, 0);
+          let sumScores = 0;
+          Object.entries(scoresMap).forEach(([score, cnt]) => {
+            sumScores += Number(score) * cnt;
+          });
+          const meanScore = totalScoredEntries > 0 ? Number((sumScores / totalScoredEntries).toFixed(2)) : 0;
+          const daysWatched = user.stats?.watchedTime ? Number((user.stats.watchedTime / 1440).toFixed(1)) : Number(((episodesWatched * 24) / 1440).toFixed(1));
+
+          const scoresArray = [];
+          for (let s = 10; s >= 1; s--) {
+            const cnt = scoresMap[s] || 0;
+            const pct = totalScoredEntries > 0 ? Number(((cnt / totalScoredEntries) * 100).toFixed(1)) : 0;
+            scoresArray.push({ score: s, count: cnt, percentage: pct });
+          }
+
+          const mappedUser = {
+            username: user.name,
+            url: `https://anilist.co/user/${user.name}`,
+            avatar: user.avatar?.large || "https://placehold.co/150/141824/3cd6ff?text=MAL",
+            daysWatched,
+            meanScore,
+            watchingCount,
+            completedCount,
+            onHoldCount,
+            droppedCount,
+            planToWatchCount,
+            episodesWatched,
+            totalEntries,
+            rewatchedCount: 0,
+            scores: scoresArray,
+            source: "AniList Live API",
+            isMocked: false
+          };
+
+          setMalUser(mappedUser);
+          setMalWatching(watchingData);
+          return { success: true, source: "AniList" };
+        }
+      }
+    } catch (aniErr) {
+      console.warn("AniList API error:", aniErr);
+    }
+
+    return {
+      success: false,
+      error: `Could not find anime user "${username}". Please verify your username on MyAnimeList or AniList.`
+    };
   };
 
   const unlinkMalUser = () => {
