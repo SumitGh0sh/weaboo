@@ -13,8 +13,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const { client_id, code, code_verifier, redirect_uri } = req.body;
-  const client_secret = process.env.VITE_MAL_CLIENT_SECRET;
+  let body = req.body;
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body);
+    } catch (e) {}
+  }
+
+  const { client_id, client_secret, code, code_verifier, redirect_uri } = body || {};
+  const secretToUse = client_secret || process.env.VITE_MAL_CLIENT_SECRET || process.env.MAL_CLIENT_SECRET || "f968fc3fde4551745f70e2ce0d5be390f667858c6ffe4e741c73d6d26428c277";
 
   if (!client_id || !code || !code_verifier || !redirect_uri) {
     return res.status(400).json({ error: "Missing required parameters" });
@@ -28,7 +35,7 @@ export default async function handler(req, res) {
       },
       body: new URLSearchParams({
         client_id,
-        client_secret: client_secret || "",
+        client_secret: secretToUse,
         grant_type: "authorization_code",
         code,
         code_verifier,

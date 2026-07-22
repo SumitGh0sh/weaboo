@@ -5,7 +5,7 @@ import { fetchWithRetry } from "../services/api";
 const AppContext = createContext();
 
 const generateRandomString = (length) => {
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let text = "";
   for (let i = 0; i < length; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
@@ -173,6 +173,7 @@ export const AppProvider = ({ children }) => {
   // MAL link methods using official OAuth 2.0 with PKCE
   const initiateMalLogin = () => {
     const verifier = generateRandomString(64);
+    localStorage.setItem("weaboo_mal_code_verifier", verifier);
     sessionStorage.setItem("mal_code_verifier", verifier);
     
     const clientId = import.meta.env.VITE_MAL_CLIENT_ID || "0a1149a877d374546f0cc5c334fd5566";
@@ -184,12 +185,13 @@ export const AppProvider = ({ children }) => {
   };
 
   const exchangeMalCodeForToken = async (code) => {
-    const verifier = sessionStorage.getItem("mal_code_verifier");
+    const verifier = localStorage.getItem("weaboo_mal_code_verifier") || sessionStorage.getItem("mal_code_verifier");
     if (!verifier) {
       return { success: false, error: "PKCE verifier code not found in session storage." };
     }
     
     const clientId = import.meta.env.VITE_MAL_CLIENT_ID || "0a1149a877d374546f0cc5c334fd5566";
+    const clientSecret = import.meta.env.VITE_MAL_CLIENT_SECRET || "f968fc3fde4551745f70e2ce0d5be390f667858c6ffe4e741c73d6d26428c277";
     const redirectUri = `${window.location.origin}/auth/mal/callback`;
     
     try {
@@ -200,6 +202,7 @@ export const AppProvider = ({ children }) => {
         },
         body: JSON.stringify({
           client_id: clientId,
+          client_secret: clientSecret,
           code,
           code_verifier: verifier,
           redirect_uri: redirectUri
