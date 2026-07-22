@@ -114,6 +114,19 @@ export const AppProvider = ({ children }) => {
     if (token && !malUser) {
       fetchMalUserData(token);
     }
+
+    // Auto-detect OAuth redirect code parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+    if (code) {
+      exchangeMalCodeForToken(code).then((result) => {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        if (result.success) {
+          setShowMalProfileModal(true);
+        }
+      });
+    }
   }, []);
 
   // Watchlist functions
@@ -177,7 +190,7 @@ export const AppProvider = ({ children }) => {
     sessionStorage.setItem("mal_code_verifier", verifier);
     
     const clientId = import.meta.env.VITE_MAL_CLIENT_ID || "0a1149a877d374546f0cc5c334fd5566";
-    const redirectUri = `${window.location.origin}/auth/mal/callback`;
+    const redirectUri = window.location.origin.endsWith('/') ? window.location.origin : `${window.location.origin}/`;
     
     const authUrl = `https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=${clientId}&code_challenge=${verifier}&code_challenge_method=plain&redirect_uri=${encodeURIComponent(redirectUri)}`;
     
@@ -192,7 +205,7 @@ export const AppProvider = ({ children }) => {
     
     const clientId = import.meta.env.VITE_MAL_CLIENT_ID || "0a1149a877d374546f0cc5c334fd5566";
     const clientSecret = import.meta.env.VITE_MAL_CLIENT_SECRET || "f968fc3fde4551745f70e2ce0d5be390f667858c6ffe4e741c73d6d26428c277";
-    const redirectUri = `${window.location.origin}/auth/mal/callback`;
+    const redirectUri = window.location.origin.endsWith('/') ? window.location.origin : `${window.location.origin}/`;
     
     try {
       const res = await fetch("/api/mal-token", {
