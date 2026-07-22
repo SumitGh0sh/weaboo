@@ -2,6 +2,26 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { genresList, typesList, animeCatalog } from "../data/animeData";
+import {
+  Home,
+  Calendar,
+  SlidersHorizontal,
+  Layers,
+  Tv,
+  Clock,
+  Sparkles,
+  Flame,
+  CalendarRange,
+  Activity,
+  CheckCircle2,
+  Shuffle,
+  ListOrdered,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  X
+} from "lucide-react";
 
 export const SiteSidebar = () => {
   const { lang, setLang, sidebarCollapsed, setSidebarCollapsed } = useApp();
@@ -76,7 +96,7 @@ export const SiteSidebar = () => {
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             aria-label="Collapse sidebar"
           >
-            <i className={`fa-solid ${sidebarCollapsed ? "fa-angles-right" : "fa-angles-left"}`}></i>
+            {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
 
           <button
@@ -85,23 +105,23 @@ export const SiteSidebar = () => {
             onClick={() => setSidebarCollapsed(true)}
             aria-label="Close menu"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <X size={18} />
           </button>
         </div>
 
         <nav className="site-sidebar__nav">
           <Link to="/home" className={`sidebar-link ${isActive("/home")}`}>
-            <i className="fa-solid fa-house"></i>
+            <Home size={18} />
             <span>Home</span>
           </Link>
           
           <Link to="/schedule" className={`sidebar-link ${isActive("/schedule")}`}>
-            <i className="fa-solid fa-calendar-days"></i>
+            <Calendar size={18} />
             <span>Schedule</span>
           </Link>
           
           <Link to="/filter" className={`sidebar-link ${isActive("/filter")}`}>
-            <i className="fa-solid fa-filter"></i>
+            <SlidersHorizontal size={18} />
             <span>Filter</span>
           </Link>
 
@@ -113,9 +133,9 @@ export const SiteSidebar = () => {
               onClick={() => setGenresExpanded(!genresExpanded)}
               aria-expanded={genresExpanded}
             >
-              <i className="fa-solid fa-layer-group"></i>
+              <Layers size={18} />
               <span>Genre</span>
-              <i className={`fa-solid fa-chevron-${genresExpanded ? "up" : "down"} sidebar-caret`}></i>
+              {genresExpanded ? <ChevronUp size={14} className="sidebar-caret" /> : <ChevronDown size={14} className="sidebar-caret" />}
             </button>
             <div className="sidebar-submenu" style={{ display: genresExpanded ? "grid" : "none" }}>
               {genresList.map((genre) => (
@@ -138,9 +158,9 @@ export const SiteSidebar = () => {
               onClick={() => setTypesExpanded(!typesExpanded)}
               aria-expanded={typesExpanded}
             >
-              <i className="fa-solid fa-tv"></i>
+              <Tv size={18} />
               <span>Types</span>
-              <i className={`fa-solid fa-chevron-${typesExpanded ? "up" : "down"} sidebar-caret`}></i>
+              {typesExpanded ? <ChevronUp size={14} className="sidebar-caret" /> : <ChevronDown size={14} className="sidebar-caret" />}
             </button>
             <div className="sidebar-submenu" style={{ display: typesExpanded ? "grid" : "none" }}>
               {typesList.map((type) => (
@@ -156,42 +176,42 @@ export const SiteSidebar = () => {
           </div>
 
           <Link to="/filter?sort=updated" className={`sidebar-link ${isActive("/filter?sort=updated")}`}>
-            <i className="fa-solid fa-clock-rotate-left"></i>
+            <Clock size={18} />
             <span>Updated</span>
           </Link>
 
           <Link to="/filter?sort=new" className={`sidebar-link ${isActive("/filter?sort=new")}`}>
-            <i className="fa-solid fa-bolt"></i>
+            <Sparkles size={18} />
             <span>New Release</span>
           </Link>
 
           <Link to="/filter?sort=popular" className={`sidebar-link ${isActive("/filter?sort=popular")}`}>
-            <i className="fa-solid fa-fire"></i>
+            <Flame size={18} />
             <span>Popular</span>
           </Link>
 
           <Link to="/filter?status=upcoming" className={`sidebar-link ${isActive("/filter?status=upcoming")}`}>
-            <i className="fa-solid fa-calendar"></i>
+            <CalendarRange size={18} />
             <span>Upcoming</span>
           </Link>
 
           <Link to="/filter?status=ongoing" className={`sidebar-link ${isActive("/filter?status=ongoing")}`}>
-            <i className="fa-solid fa-signal"></i>
+            <Activity size={18} />
             <span>Ongoing</span>
           </Link>
 
           <Link to="/filter?status=completed" className={`sidebar-link ${isActive("/filter?status=completed")}`}>
-            <i className="fa-solid fa-circle-check"></i>
+            <CheckCircle2 size={18} />
             <span>Completed</span>
           </Link>
 
           <button type="button" className="sidebar-link" onClick={handleRandom} style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}>
-            <i className="fa-solid fa-shuffle"></i>
+            <Shuffle size={18} />
             <span>Random</span>
           </button>
 
           <Link to="/filter?letter=all" className={`sidebar-link ${isActive("/filter?letter=all")}`}>
-            <i className="fa-solid fa-list-ol"></i>
+            <ListOrdered size={18} />
             <span>A-Z List</span>
           </Link>
         </nav>
