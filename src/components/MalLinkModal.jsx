@@ -2,42 +2,11 @@ import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
 
 export const MalLinkModal = () => {
-  const { showMalLinkModal, setShowMalLinkModal, linkMalUser } = useApp();
-  const [username, setUsername] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [successData, setSuccessData] = useState(null);
+  const { showMalLinkModal, setShowMalLinkModal, initiateMalLogin } = useApp();
 
   if (!showMalLinkModal) return null;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!username.trim()) {
-      setError("Please enter a username");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    const result = await linkMalUser(username);
-    setLoading(false);
-
-    if (result.success) {
-      setSuccessData(username);
-      setTimeout(() => {
-        setSuccessData(null);
-        setUsername("");
-        setShowMalLinkModal(false);
-      }, 2000);
-    } else {
-      setError(result.error || "User not found or connection failed");
-    }
-  };
-
   const handleClose = () => {
-    if (loading) return;
-    setError("");
-    setSuccessData(null);
     setShowMalLinkModal(false);
   };
 
@@ -48,56 +17,21 @@ export const MalLinkModal = () => {
           <i className="fa-solid fa-xmark"></i>
         </button>
 
-        {successData ? (
-          <div style={styles.successContainer}>
-            <div style={styles.successIcon}>
-              <i className="fa-solid fa-circle-check"></i>
-            </div>
-            <h3 style={styles.title}>Account Linked!</h3>
-            <p style={styles.text}>
-              Successfully synced with <strong>{successData}</strong>'s MAL profile.
-            </p>
+        <div style={styles.content}>
+          <div style={styles.iconHeader}>
+            <i className="fa-solid fa-link" style={{ color: "var(--accent)" }}></i>
+            <span style={styles.malBadge}>MAL</span>
           </div>
-        ) : (
-          <div style={styles.content}>
-            <div style={styles.iconHeader}>
-              <i className="fa-solid fa-link" style={{ color: "var(--accent)" }}></i>
-              <span style={styles.malBadge}>MAL</span>
-            </div>
-            <h3 style={styles.title}>Link MyAnimeList</h3>
-            <p style={styles.subtitle}>
-              Enter your public MAL username to sync your statistics, ratings, and active watchlist.
-            </p>
+          <h3 style={styles.title}>Link MyAnimeList</h3>
+          <p style={styles.subtitle}>
+            Connect securely using official MyAnimeList OAuth 2.0 to sync your statistics, ratings, and active watchlist.
+          </p>
 
-            <form onSubmit={handleSubmit} style={styles.form}>
-              <div style={styles.inputWrap}>
-                <i className="fa-regular fa-user" style={styles.inputIcon}></i>
-                <input
-                  type="text"
-                  placeholder="MyAnimeList Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={loading}
-                  style={styles.input}
-                  autoFocus
-                />
-              </div>
-
-              {error && <div style={styles.errorText}>⚠️ {error}</div>}
-
-              <button type="submit" disabled={loading} style={styles.submitBtn}>
-                {loading ? (
-                  <div style={styles.spinner}></div>
-                ) : (
-                  <>
-                    <span>Link Profile</span>
-                    <i className="fa-solid fa-arrow-right-to-bracket" style={{ marginLeft: "8px" }}></i>
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        )}
+          <button onClick={initiateMalLogin} style={styles.submitBtn}>
+            <i className="fa-solid fa-arrow-right-to-bracket" style={{ marginRight: "8px" }}></i>
+            <span>Connect with MyAnimeList</span>
+          </button>
+        </div>
       </div>
     </div>
   );

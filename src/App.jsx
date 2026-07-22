@@ -14,6 +14,7 @@ import { DetailsPage } from "./pages/DetailsPage";
 import { WatchPage } from "./pages/WatchPage";
 import { FilterPage } from "./pages/FilterPage";
 import { SchedulePage } from "./pages/SchedulePage";
+import { MalCallbackPage } from "./pages/MalCallbackPage";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -115,6 +116,7 @@ function App() {
             <Route path="/filter" element={<FilterPage />} />
             <Route path="/schedule" element={<SchedulePage />} />
           </Route>
+          <Route path="/auth/mal/callback" element={<MalCallbackPage />} />
         </Routes>
       </BrowserRouter>
     </AppProvider>

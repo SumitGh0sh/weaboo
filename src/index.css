@@ -12328,7 +12328,7 @@ form.filters .dropdown .btn .value.is-set {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 992px) {
     .dashboard-grid {
         grid-template-columns: 1fr !important;
         gap: 20px !important;

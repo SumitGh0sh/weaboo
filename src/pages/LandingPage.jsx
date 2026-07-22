@@ -190,16 +190,28 @@ const ParallaxPostersContainer = ({ children, className }) => {
     setCoords({ x: 0, y: 0, active: false });
   };
 
+  const handleTouchMove = (e) => {
+    if (e.touches.length > 0) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = (e.touches[0].clientX - rect.left) / rect.width - 0.5;
+      const y = (e.touches[0].clientY - rect.top) / rect.height - 0.5;
+      setCoords({ x, y, active: true });
+    }
+  };
+
   return (
     <div
       className={className}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onTouchMove={handleTouchMove}
+      onTouchStart={handleTouchMove}
+      onTouchEnd={handleMouseLeave}
       style={{
         perspective: "1200px",
         transformStyle: "preserve-3d",
         transform: coords.active
-          ? `rotateX(${coords.y * -16}deg) rotateY(${coords.x * 16}deg) scale(1.03)`
+          ? `rotateX(${coords.y * -20}deg) rotateY(${coords.x * 20}deg) scale(1.04)`
           : "rotateX(0deg) rotateY(0deg) scale(1)",
         transition: coords.active ? "transform 0.1s ease-out" : "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)"
       }}
@@ -235,6 +247,7 @@ const ParallaxPostersContainer = ({ children, className }) => {
         // Default: Treat as a poster card
         const zIndex = child.props?.style?.zIndex || 1;
         const translateZ = zIndex * 24; // 24px, 48px, 72px, etc. depth layers
+        const translateY = coords.active ? -14 * zIndex : 0;
         
         return (
           <div
@@ -251,11 +264,11 @@ const ParallaxPostersContainer = ({ children, className }) => {
                 display: "block",
                 width: "100%",
                 height: "100%",
-                transform: `translateZ(${translateZ}px)`,
+                transform: `translate3d(0px, ${translateY}px, ${translateZ}px)`,
                 transformStyle: "preserve-3d",
                 borderRadius: "var(--radius)",
                 overflow: "hidden",
-                transition: "transform 0.25s ease"
+                transition: "transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
               }
             })}
           </div>
