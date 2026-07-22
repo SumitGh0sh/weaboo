@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   }
 
   const { client_id, client_secret, code, code_verifier, redirect_uri } = body || {};
-  const secretToUse = client_secret || process.env.VITE_MAL_CLIENT_SECRET || process.env.MAL_CLIENT_SECRET || "f968fc3fde4551745f70e2ce0d5be390f667858c6ffe4e741c73d6d26428c277";
+  const secretToUse = client_secret || process.env.VITE_MAL_CLIENT_SECRET || process.env.MAL_CLIENT_SECRET || "";
 
   if (!client_id || !code || !code_verifier || !redirect_uri) {
     return res.status(400).json({ error: "Missing required parameters" });

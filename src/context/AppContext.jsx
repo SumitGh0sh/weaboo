@@ -204,7 +204,7 @@ export const AppProvider = ({ children }) => {
     }
     
     const clientId = import.meta.env.VITE_MAL_CLIENT_ID || "0a1149a877d374546f0cc5c334fd5566";
-    const clientSecret = import.meta.env.VITE_MAL_CLIENT_SECRET || "f968fc3fde4551745f70e2ce0d5be390f667858c6ffe4e741c73d6d26428c277";
+    const clientSecret = import.meta.env.VITE_MAL_CLIENT_SECRET || "";
     const redirectUri = window.location.origin.endsWith('/') ? window.location.origin : `${window.location.origin}/`;
     
     try {
