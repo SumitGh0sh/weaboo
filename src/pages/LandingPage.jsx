@@ -280,7 +280,7 @@ const ParallaxPostersContainer = ({ children, className }) => {
 
 export const LandingPage = () => {
   const navigate = useNavigate();
-  const { setShowLoginModal, setLoginModalTab } = useApp();
+  const { setShowLoginModal, setLoginModalTab, malUser, setShowMalLinkModal, setShowMalProfileModal } = useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef(null);
 
@@ -377,6 +377,56 @@ export const LandingPage = () => {
         </Link>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {malUser ? (
+            <button
+              onClick={() => setShowMalProfileModal(true)}
+              style={{
+                height: "36px",
+                padding: "0 12px",
+                borderRadius: "8px",
+                border: "1px solid rgba(60, 214, 255, 0.3)",
+                background: "rgba(14, 23, 42, 0.8)",
+                color: "#f8fafc",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                cursor: "pointer",
+                transition: "all 0.2s ease"
+              }}
+              title={`MAL Profile: ${malUser.username}`}
+            >
+              <img
+                src={malUser.avatar}
+                alt={malUser.username}
+                style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "cover" }}
+              />
+              <span style={{ fontSize: "12px", fontWeight: "600" }}>{malUser.username}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowMalLinkModal(true)}
+              style={{
+                height: "36px",
+                padding: "0 12px",
+                borderRadius: "8px",
+                border: "1px solid rgba(46, 81, 162, 0.4)",
+                background: "#2e51a2",
+                color: "#ffffff",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "12px",
+                fontWeight: "700",
+                cursor: "pointer",
+                boxShadow: "0 0 10px rgba(46, 81, 162, 0.4)"
+              }}
+              title="Link MyAnimeList Account"
+            >
+              <span style={{ fontSize: "10px", padding: "2px 4px", background: "white", color: "#2e51a2", borderRadius: "4px", fontWeight: "900" }}>MAL</span>
+              <span>Link MAL</span>
+            </button>
+          )}
+
           <button
             className="btn"
             style={{

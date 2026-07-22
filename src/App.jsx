@@ -104,6 +104,8 @@ function App() {
               <>
                 <LandingPage />
                 <LoginModal />
+                <MalLinkModal />
+                <MalProfileModal />
               </>
             }
           />
