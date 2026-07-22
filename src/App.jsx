@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet, useLocation } from "react-router-dom";
 import { AppProvider } from "./context/AppContext";
 import { SiteHeader } from "./components/SiteHeader";
 import { SiteSidebar } from "./components/SiteSidebar";
@@ -14,6 +14,14 @@ import { DetailsPage } from "./pages/DetailsPage";
 import { WatchPage } from "./pages/WatchPage";
 import { FilterPage } from "./pages/FilterPage";
 import { SchedulePage } from "./pages/SchedulePage";
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [pathname]);
+  return null;
+};
 
 const AppShellLayout = () => {
   return (
@@ -86,6 +94,7 @@ function App() {
         </div>
       )}
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           {/* Landing page (has no sidebar shell) */}
           <Route
