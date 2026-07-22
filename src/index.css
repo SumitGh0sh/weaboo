@@ -41,11 +41,37 @@
     border-radius: 0;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: hsl(220 18% 18%); }
-::-webkit-scrollbar-thumb:hover { background: hsl(220 14% 28%); }
-* { scrollbar-width: thin; scrollbar-color: hsl(220 18% 18%) var(--bg); }
+/* Aesthetic Theme Scrollbar (Global Custom Scrollbars) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(6, 10, 20, 0.6);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #1e293b 0%, #38bdf8 100%);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #38bdf8 0%, #3cd6ff 100%);
+  box-shadow: 0 0 10px rgba(60, 214, 255, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #38bdf8 rgba(6, 10, 20, 0.6);
+}
 
 html {
     scroll-behavior: smooth;

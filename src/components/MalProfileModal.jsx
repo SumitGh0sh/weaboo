@@ -292,23 +292,34 @@ export const MalProfileModal = () => {
                   {malWatching.map((item, idx) => {
                     const animeTitle = item.anime?.title || "Unknown Title";
                     const localLink = getLocalLink(animeTitle);
+                    const epProgress = item.progress !== undefined ? item.progress : (item.episodes_watched || 0);
+                    const epTotal = item.anime?.episodes || item.episodes_total || "?";
                     
                     return (
                       <div key={item.anime?.mal_id || idx} style={styles.shelfCard}>
-                        <div style={styles.shelfPosterWrap}>
-                          <img src={item.anime?.images?.jpg?.image_url} alt="" style={styles.shelfPoster} />
-                          <div style={styles.shelfProgress}>
-                            {item.episodes_watched} / {item.episodes_total || "?"} eps
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
+                          <img
+                            src={item.anime?.images?.jpg?.image_url}
+                            alt=""
+                            style={{ width: "42px", height: "56px", borderRadius: "6px", objectFit: "cover", flexShrink: 0 }}
+                          />
+                          <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
+                            <span style={{ fontSize: "12px", fontWeight: "600", color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {animeTitle}
+                            </span>
+                            <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+                              Watched {epProgress} / {epTotal} eps
+                            </span>
                           </div>
                         </div>
-                        <div style={styles.shelfInfo}>
-                          <span style={styles.shelfTitle}>{animeTitle}</span>
+
+                        <div style={{ flexShrink: 0 }}>
                           {localLink ? (
                             <Link to={localLink} onClick={() => setShowMalProfileModal(false)} style={styles.localWatchBtn}>
                               <i className="fa-solid fa-play" style={{ fontSize: "8px", marginRight: "3px" }}></i> Watch
                             </Link>
                           ) : (
-                            <a href={item.anime?.url} target="_blank" rel="noopener noreferrer" style={styles.malDetailsLink}>
+                            <a href={item.anime?.url || `https://myanimelist.net/anime/${item.anime?.mal_id}`} target="_blank" rel="noopener noreferrer" style={styles.malDetailsLink}>
                               Link <i className="fa-solid fa-up-right-from-square" style={{ fontSize: "8px" }}></i>
                             </a>
                           )}
@@ -967,20 +978,23 @@ const styles = {
   },
   scrollShelf: {
     display: "flex",
-    gap: "10px",
-    overflowX: "auto",
-    WebkitOverflowScrolling: "touch",
-    paddingBottom: "6px"
+    flexDirection: "column",
+    gap: "8px",
+    maxHeight: "220px",
+    overflowY: "auto",
+    paddingRight: "4px"
   },
   shelfCard: {
-    width: "86px",
-    flexShrink: 0,
+    width: "100%",
     background: "#131c2e",
     border: "1px solid #1e293b",
     borderRadius: "8px",
-    overflow: "hidden",
+    padding: "8px 12px",
     display: "flex",
-    flexDirection: "column"
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "10px",
+    boxSizing: "border-box"
   },
   shelfPosterWrap: {
     position: "relative",
