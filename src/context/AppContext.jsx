@@ -189,7 +189,7 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem("weaboo_mal_code_verifier", verifier);
     sessionStorage.setItem("mal_code_verifier", verifier);
     
-    const clientId = import.meta.env.VITE_MAL_CLIENT_ID || "0a1149a877d374546f0cc5c334fd5566";
+    const clientId = import.meta.env.VITE_MAL_CLIENT_ID || "";
     const redirectUri = window.location.origin.endsWith('/') ? window.location.origin : `${window.location.origin}/`;
     
     const authUrl = `https://myanimelist.net/v1/oauth2/authorize?response_type=code&client_id=${clientId}&code_challenge=${verifier}&code_challenge_method=plain&redirect_uri=${encodeURIComponent(redirectUri)}`;
@@ -203,7 +203,7 @@ export const AppProvider = ({ children }) => {
       return { success: false, error: "PKCE verifier code not found in session storage." };
     }
     
-    const clientId = import.meta.env.VITE_MAL_CLIENT_ID || "0a1149a877d374546f0cc5c334fd5566";
+    const clientId = import.meta.env.VITE_MAL_CLIENT_ID || "";
     const clientSecret = import.meta.env.VITE_MAL_CLIENT_SECRET || "";
     const redirectUri = window.location.origin.endsWith('/') ? window.location.origin : `${window.location.origin}/`;
     
