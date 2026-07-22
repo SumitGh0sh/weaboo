@@ -14,6 +14,7 @@ export default async function handler(req, res) {
   }
 
   const { client_id, code, code_verifier, redirect_uri } = req.body;
+  const client_secret = process.env.VITE_MAL_CLIENT_SECRET;
 
   if (!client_id || !code || !code_verifier || !redirect_uri) {
     return res.status(400).json({ error: "Missing required parameters" });
@@ -27,6 +28,7 @@ export default async function handler(req, res) {
       },
       body: new URLSearchParams({
         client_id,
+        client_secret: client_secret || "",
         grant_type: "authorization_code",
         code,
         code_verifier,
