@@ -120,10 +120,13 @@ export const AppProvider = ({ children }) => {
     const code = urlParams.get("code");
     if (code) {
       exchangeMalCodeForToken(code).then((result) => {
-        const cleanUrl = window.location.origin + window.location.pathname;
+        const cleanUrl = window.location.origin + "/home";
         window.history.replaceState({}, document.title, cleanUrl);
         if (result.success) {
           setShowMalProfileModal(true);
+          if (window.location.pathname !== "/home") {
+            window.location.href = "/home";
+          }
         }
       });
     }
