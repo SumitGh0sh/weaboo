@@ -254,6 +254,7 @@ nav.topbar {
     background: var(--bg2);
     border: 1px solid var(--border);
     min-width: 0;
+    border-radius: var(--radius);
 }
 
 .table-card {
@@ -623,6 +624,7 @@ nav.topbar {
     font-size: 13px;
     border: 1px solid var(--border);
     line-height: 1.5;
+    border-radius: var(--radius);
 }
 
 .alert-ok {
@@ -1191,6 +1193,7 @@ body.instant-nav-loading #app-main {
     height: clamp(320px, 52vh, 520px);
     overflow: hidden;
     margin-bottom: 24px;
+    border-radius: var(--radius);
 }
 
 .hero-track {
@@ -1298,6 +1301,7 @@ body.instant-nav-loading #app-main {
     cursor: pointer;
     display: grid;
     place-items: center;
+    border-radius: 8px;
 }
 
 .hero-arrow:hover { border-color: var(--accent); color: var(--accent); }
@@ -1320,6 +1324,7 @@ body.instant-nav-loading #app-main {
     background: hsl(220 10% 35%);
     cursor: pointer;
     padding: 0;
+    border-radius: 4px;
 }
 
 .hero-dots button.active,
@@ -7308,6 +7313,7 @@ body.sidebar-collapsed .lang-switch--sidebar button {
     font-weight: 600;
     border: 1px solid var(--border);
     background: hsl(220 20% 8% / .55);
+    border-radius: 6px;
 }
 
 .hero-badge.sub { color: var(--accent); border-color: hsl(172 66% 50% / .4); }

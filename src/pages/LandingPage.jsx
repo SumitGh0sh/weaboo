@@ -14,6 +14,167 @@ import {
   ArrowRight
 } from "lucide-react";
 
+// Interactive Canvas Particles
+const InteractiveParticles = () => {
+  const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: null, y: null });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let animationFrameId;
+    let particles = [];
+
+    const handleResize = () => {
+      canvas.width = canvas.parentElement.offsetWidth;
+      canvas.height = canvas.parentElement.offsetHeight;
+      initParticles();
+    };
+
+    const initParticles = () => {
+      particles = [];
+      const density = Math.min(Math.floor((canvas.width * canvas.height) / 14000), 85);
+      for (let i = 0; i < density; i++) {
+        particles.push(new Particle(canvas.width, canvas.height));
+      }
+    };
+
+    class Particle {
+      constructor(w, h) {
+        this.x = Math.random() * w;
+        this.y = Math.random() * h;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.radius = Math.random() * 2 + 0.8;
+        this.color = Math.random() > 0.4 ? "rgba(60, 214, 255, 0.3)" : "rgba(56, 155, 255, 0.2)";
+      }
+      update(w, h, m) {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > w) this.vx *= -1;
+        if (this.y < 0 || this.y > h) this.vy *= -1;
+
+        if (m.x !== null && m.y !== null) {
+          const dx = m.x - this.x;
+          const dy = m.y - this.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 150) {
+            const force = (150 - dist) / 2800;
+            this.vx += (dx / dist) * force;
+            this.vy += (dy / dist) * force;
+          }
+        }
+        const speed = Math.hypot(this.vx, this.vy);
+        const max = 1.3;
+        if (speed > max) {
+          this.vx = (this.vx / speed) * max;
+          this.vy = (this.vy / speed) * max;
+        }
+      }
+      draw(c) {
+        c.beginPath();
+        c.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        c.fillStyle = this.color;
+        c.fill();
+      }
+    }
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    const mouse = mouseRef.current;
+    const handleMouseMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    };
+    const handleMouseLeave = () => {
+      mouse.x = null;
+      mouse.y = null;
+    };
+    const handleTouchMove = (e) => {
+      if (e.touches.length > 0) {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.touches[0].clientX - rect.left;
+        mouse.y = e.touches[0].clientY - rect.top;
+      }
+    };
+
+    const parent = canvas.parentElement;
+    parent.addEventListener("mousemove", handleMouseMove);
+    parent.addEventListener("mouseleave", handleMouseLeave);
+    parent.addEventListener("touchmove", handleTouchMove, { passive: true });
+    parent.addEventListener("touchend", handleMouseLeave);
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach((p) => {
+        p.update(canvas.width, canvas.height, mouse);
+        p.draw(ctx);
+      });
+
+      for (let i = 0; i < particles.length; i++) {
+        if (mouse.x !== null && mouse.y !== null) {
+          const dx = mouse.x - particles[i].x;
+          const dy = mouse.y - particles[i].y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `rgba(60, 214, 255, ${0.14 * (1 - dist / 120)})`;
+            ctx.lineWidth = 0.9;
+            ctx.stroke();
+          }
+        }
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 85) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(56, 155, 255, ${0.08 * (1 - dist / 85)})`;
+            ctx.lineWidth = 0.7;
+            ctx.stroke();
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      parent.removeEventListener("mousemove", handleMouseMove);
+      parent.removeEventListener("mouseleave", handleMouseLeave);
+      parent.removeEventListener("touchmove", handleTouchMove);
+      parent.removeEventListener("touchend", handleMouseLeave);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        zIndex: 0,
+        pointerEvents: "none"
+      }}
+    />
+  );
+};
+
 // Reusable 3D Parallax layered container
 const ParallaxPostersContainer = ({ children, className }) => {
   const [coords, setCoords] = useState({ x: 0, y: 0, active: false });
@@ -46,9 +207,11 @@ const ParallaxPostersContainer = ({ children, className }) => {
       {React.Children.map(children, (child) => {
         if (!child) return null;
         
+        const className = child.props?.className || "";
+        
         // If it's a ring, assign deep negative depth
-        if (child.props && child.props.className && child.props.className.includes("landing-ring")) {
-          const depth = child.props.className.includes("1") ? -30 : -50;
+        if (className.includes("landing-ring")) {
+          const depth = className.includes("1") ? -30 : -50;
           return React.cloneElement(child, {
             style: {
               ...child.props.style,
@@ -59,7 +222,7 @@ const ParallaxPostersContainer = ({ children, className }) => {
         }
 
         // If it's a badge, assign high positive depth
-        if (child.props && child.props.className && child.props.className.includes("landing-badge")) {
+        if (className.includes("landing-badge")) {
           return React.cloneElement(child, {
             style: {
               ...child.props.style,
@@ -69,36 +232,34 @@ const ParallaxPostersContainer = ({ children, className }) => {
           });
         }
 
-        // If it's a poster, assign progressive depth based on zIndex
-        if (child.props && child.props.style) {
-          const zIndex = child.props.style.zIndex || 1;
-          const translateZ = zIndex * 20; // 20px, 40px, 60px, 80px, 100px depth layers!
-          
-          return (
-            <div
-              style={{
-                position: "absolute",
-                left: child.props.style.left,
-                top: child.props.style.top,
-                zIndex: child.props.style.zIndex,
+        // Default: Treat as a poster card
+        const zIndex = child.props?.style?.zIndex || 1;
+        const translateZ = zIndex * 24; // 24px, 48px, 72px, etc. depth layers
+        
+        return (
+          <div
+            className="landing-poster"
+            style={{
+              ...child.props?.style,
+              transformStyle: "preserve-3d",
+              overflow: "visible"
+            }}
+          >
+            {React.cloneElement(child, {
+              className: undefined, // remove from inner Link
+              style: {
+                display: "block",
+                width: "100%",
+                height: "100%",
                 transform: `translateZ(${translateZ}px)`,
-                transformStyle: "preserve-3d"
-              }}
-            >
-              {React.cloneElement(child, {
-                style: {
-                  ...child.props.style,
-                  left: undefined,
-                  top: undefined,
-                  position: undefined,
-                  zIndex: undefined
-                }
-              })}
-            </div>
-          );
-        }
-
-        return child;
+                transformStyle: "preserve-3d",
+                borderRadius: "var(--radius)",
+                overflow: "hidden",
+                transition: "transform 0.25s ease"
+              }
+            })}
+          </div>
+        );
       })}
     </div>
   );
@@ -174,6 +335,7 @@ export const LandingPage = () => {
       
     }, containerRef);
 
+    return () => ctx.revert();
   }, []);
 
   const handleSearchSubmit = (e) => {
@@ -193,7 +355,8 @@ export const LandingPage = () => {
   ];
 
   return (
-    <div className="landing" ref={containerRef}>
+    <div className="landing" ref={containerRef} style={{ position: "relative", overflow: "hidden" }}>
+      <InteractiveParticles />
       {/* Top Navbar Header overlay on Landing page */}
       <header className="landing-navbar" style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 20 }}>
         <Link to="/home" className="brand" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
