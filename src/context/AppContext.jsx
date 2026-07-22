@@ -248,8 +248,8 @@ export const AppProvider = ({ children }) => {
     if (!token) return { success: false, error: "No active access token" };
     
     try {
-      // 1. Fetch MAL user profile
-      const resProfile = await fetch("https://api.myanimelist.net/v2/users/@me?fields=anime_statistics", {
+      // 1. Fetch MAL user profile via CORS-free serverless proxy
+      const resProfile = await fetch(`/api/mal-proxy?endpoint=${encodeURIComponent("/users/@me?fields=anime_statistics")}`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -264,8 +264,8 @@ export const AppProvider = ({ children }) => {
       
       const profile = await resProfile.json();
       
-      // 2. Fetch User animelist (watching list)
-      const resWatching = await fetch("https://api.myanimelist.net/v2/users/@me/animelist?status=watching&limit=100&fields=list_status", {
+      // 2. Fetch User animelist (watching list) via CORS-free serverless proxy
+      const resWatching = await fetch(`/api/mal-proxy?endpoint=${encodeURIComponent("/users/@me/animelist?status=watching&limit=100&fields=list_status")}`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
